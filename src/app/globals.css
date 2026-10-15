@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+:root {
+  --background: #faf9f7;
+  --surface: #ffffff;
+  --foreground: #1c1a20;
+  --muted: #6b6672;
+  --border: #e6e2ea;
+  --accent: #6d4fb3;
+  --accent-soft: #efeaf8;
+  --accent-foreground: #ffffff;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #131117;
+    --surface: #1c1a22;
+    --foreground: #ecebf0;
+    --muted: #9d97a8;
+    --border: #2e2b36;
+    --accent: #b49cf0;
+    --accent-soft: #2a2438;
+    --accent-foreground: #131117;
+  }
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-border: var(--border);
+  --color-accent: var(--accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-foreground: var(--accent-foreground);
+  --font-sans: var(--font-noto-sans-jp), system-ui, sans-serif;
+  --font-serif: var(--font-noto-serif-jp), serif;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* Japanese text should never be synthesised into faux bold/italic. */
+:lang(ja) {
+  font-synthesis: none;
+}
