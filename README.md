@@ -1,6 +1,4 @@
 # <img width="26" height="26" alt="image" src="https://github.com/user-attachments/assets/afc5812e-6aa8-42ed-b798-d77f6348b832" /> Nierembergia
->>>>>>> main
-re:peat
 
 A kanji decomposition explorer: search kanji, see how they're built from
 components, and study them. Built one feature a day. See the
