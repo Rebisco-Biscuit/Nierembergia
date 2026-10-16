@@ -42,3 +42,6 @@ next-env.d.ts
 
 # raw upstream datasets (see data/SOURCES.md)
 /data/raw/
+
+AGENTS.md
+CLAUDE.md
