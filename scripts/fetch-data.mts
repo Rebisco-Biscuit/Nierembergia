@@ -18,6 +18,17 @@ const SOURCES = [
     gzip: false,
   },
   {
+    file: "JMdict_e.xml",
+    url: "http://ftp.edrdg.org/pub/Nihongo/JMdict_e.gz",
+    gzip: true,
+  },
+  {
+    // Pinned release so stroke data only changes when we bump it.
+    file: "kanjivg.xml",
+    url: "https://github.com/KanjiVG/kanjivg/releases/download/r20260714/kanjivg-20260714.xml.gz",
+    gzip: true,
+  },
+  {
     file: "UnicodeData.txt",
     url: "https://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt",
     gzip: false,
