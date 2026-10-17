@@ -4,6 +4,7 @@ import { readFile, writeFile, mkdir } from "node:fs/promises";
 import path from "node:path";
 import { XMLParser } from "fast-xml-parser";
 import type { Kanji, Radical, JlptLevel } from "../src/lib/types.ts";
+import { parseComponents, type ComponentNode } from "../src/lib/kanjivg.ts";
 import { pickExamples, type VocabCandidate, type VocabWord } from "../src/lib/vocab.ts";
 
 const ROOT = path.join(import.meta.dirname, "..");
@@ -232,10 +233,14 @@ async function buildVocab(chars: Set<string>) {
   return vocab;
 }
 
-/** Stroke paths (SVG `d`, 109×109 viewBox) in stroke order, from KanjiVG. */
-async function buildStrokes(chars: Set<string>) {
+/**
+ * From KanjiVG: stroke paths (SVG `d`, 109×109 viewBox) in stroke order, and
+ * each kanji's component tree, whose stroke indices refer to those paths.
+ */
+async function buildKanjiVG(chars: Set<string>) {
   const xml = await readFile(path.join(RAW, "kanjivg.xml"), "utf8");
   const strokes: Record<string, string[]> = {};
+  const components: Record<string, ComponentNode> = {};
   // Only the default form of each kanji; ids with a suffix are style variants.
   for (const [, hex, body] of xml.matchAll(
     /<kanji id="kvg:kanji_([0-9a-f]{5})">([\s\S]*?)<\/kanji>/g,
@@ -245,21 +250,24 @@ async function buildStrokes(chars: Set<string>) {
     strokes[char] = [...body.matchAll(/<path id="kvg:[^"]*-s(\d+)"[^>]* d="([^"]+)"/g)]
       .sort((a, b) => Number(a[1]) - Number(b[1]))
       .map((m) => m[2]);
+    const tree = parseComponents(body);
+    if (tree) components[char] = tree;
   }
-  return strokes;
+  return { strokes, components };
 }
 
 const VOCAB_PER_KANJI = 8;
 const chars = new Set(kanji.map((k) => k.character));
 const vocab = await buildVocab(chars);
-const strokes = await buildStrokes(chars);
+const { strokes, components } = await buildKanjiVG(chars);
 
 await mkdir(OUT, { recursive: true });
 await writeFile(path.join(OUT, "kanji.json"), JSON.stringify(kanji));
 await writeFile(path.join(OUT, "radicals.json"), JSON.stringify(radicals));
 await writeFile(path.join(OUT, "vocab.json"), JSON.stringify(vocab));
 await writeFile(path.join(OUT, "strokes.json"), JSON.stringify(strokes));
+await writeFile(path.join(OUT, "components.json"), JSON.stringify(components));
 console.log(
   `Wrote ${kanji.length} kanji, ${radicals.length} radicals, ` +
-    `vocabulary for ${Object.keys(vocab).length}, strokes for ${Object.keys(strokes).length}.`,
+    `vocabulary for ${Object.keys(vocab).length}, strokes and components for ${Object.keys(strokes).length}.`,
 );
