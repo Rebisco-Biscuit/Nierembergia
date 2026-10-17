@@ -18,8 +18,12 @@ with tests, and is ticked off here. The full product spec is in
       radical, links between traditional and standard forms, up to 8 common
       example words from JMdict, and KanjiVG stroke order (animation plus
       stroke-by-stroke frames). Search results link to these pages.
-- [ ] **Day 3 — Visual component decomposition**
-      Component breakdown for each kanji, with data provenance recorded.
+- [x] **Day 3 — Visual component decomposition** (2026-10-17)
+      KanjiVG component trees for 3,036 kanji, shown on each detail page as a
+      colour-coded overview plus a card per component (mini stroke diagram,
+      name, radical number vs general component, position). Roles carry their
+      source: radical (KANJIDIC2), sound (KanjiVG), and meaning (inferred by
+      the app, marked with "?").
 - [ ] **Day 4 — Clickable components**
       Components link to the kanji that contain them; related kanji on the
       detail page.
