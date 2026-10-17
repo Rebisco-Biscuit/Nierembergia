@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Decomposition } from "@/components/Decomposition";
 import { StrokeAnimation, StrokeFrames } from "@/components/StrokeOrder";
 import { dataset, getKanjiDetail, type KanjiDetail } from "@/lib/data";
 import { decodeParam, gradeLabel, kanjiHref, parseKunReading } from "@/lib/format";
@@ -17,7 +18,7 @@ export async function generateMetadata({
   const { character, meanings } = detail.kanji;
   return {
     title: `${character} — ${meanings.slice(0, 2).join(", ") || "kanji"} | Nierembergia`,
-    description: `Meanings, readings, stroke order, and example words for ${character}.`,
+    description: `Meanings, readings, components, stroke order, and example words for ${character}.`,
   };
 }
 
@@ -35,6 +36,12 @@ export default async function KanjiPage({ params }: PageProps<"/kanji/[character
       </nav>
 
       <Hero detail={detail} />
+
+      <div className="mt-10">
+        <Section title="Components">
+          <Decomposition character={kanji.character} components={detail.components} strokes={strokes} />
+        </Section>
+      </div>
 
       <div className="mt-10 grid gap-10 md:grid-cols-[1fr_auto]">
         <div className="space-y-10">
