@@ -1,9 +1,14 @@
+import Link from "next/link";
+import { kanjiHref } from "@/lib/format";
 import type { Kanji } from "@/lib/types";
 
 export function KanjiCard({ kanji }: { kanji: Kanji }) {
   const { character, meanings, onyomi, kunyomi, strokes, jlpt, grade } = kanji;
   return (
-    <article className="flex gap-4 rounded-xl border border-border bg-surface p-4">
+    <Link
+      href={kanjiHref(character)}
+      className="flex h-full gap-4 rounded-xl border border-border bg-surface p-4 transition-colors hover:border-accent focus-visible:outline-2 focus-visible:outline-accent"
+    >
       <div
         lang="ja"
         className="font-serif text-5xl leading-none w-14 shrink-0 text-center pt-1"
@@ -43,7 +48,7 @@ export function KanjiCard({ kanji }: { kanji: Kanji }) {
           <Badge>{strokes} strokes</Badge>
         </ul>
       </div>
-    </article>
+    </Link>
   );
 }
 

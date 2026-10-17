@@ -28,7 +28,24 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       lang="en"
       className={`${notoSans.variable} ${notoSerif.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col font-sans">{children}</body>
+      <body className="min-h-full flex flex-col font-sans">
+        {children}
+        <footer className="mx-auto w-full max-w-5xl px-4 py-6 text-xs text-muted">
+          Kanji data from{" "}
+          <a href="https://www.edrdg.org/wiki/index.php/KANJIDIC_Project" className="underline-offset-2 hover:underline">
+            KANJIDIC2
+          </a>{" "}
+          and{" "}
+          <a href="https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project" className="underline-offset-2 hover:underline">
+            JMdict
+          </a>{" "}
+          (EDRDG, CC BY-SA 4.0); stroke order from{" "}
+          <a href="https://kanjivg.tagaini.net/" className="underline-offset-2 hover:underline">
+            KanjiVG
+          </a>{" "}
+          (CC BY-SA 3.0).
+        </footer>
+      </body>
     </html>
   );
 }

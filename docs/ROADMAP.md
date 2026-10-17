@@ -12,9 +12,12 @@ with tests, and is ticked off here. The full product spec is in
       radical number (`r:85`); JLPT, grade, and stroke filters; pagination;
       loading, empty, and error states. Project foundation: Next.js, Tailwind,
       Vitest, ESLint, type checking, CI.
-- [ ] **Day 2 — Kanji detail pages**
-      `/kanji/[character]` with meanings, readings, stroke count, JLPT, grade,
-      radical, example vocabulary, and stroke order.
+- [x] **Day 2 — Kanji detail pages** (2026-10-16)
+      `/kanji/[character]`, prerendered for all 3,125 kanji: meanings,
+      on/kun readings (okurigana marked), stroke count, JLPT, grade, frequency,
+      radical, links between traditional and standard forms, up to 8 common
+      example words from JMdict, and KanjiVG stroke order (animation plus
+      stroke-by-stroke frames). Search results link to these pages.
 - [ ] **Day 3 — Visual component decomposition**
       Component breakdown for each kanji, with data provenance recorded.
 - [ ] **Day 4 — Clickable components**

@@ -42,6 +42,37 @@ body {
   color: var(--foreground);
 }
 
+/* Stroke-order animation: each stroke draws itself in turn (see StrokeOrder.tsx). */
+.stroke-anim path[pathLength] {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 1;
+  animation-name: draw-stroke;
+  animation-timing-function: ease-in-out;
+  animation-fill-mode: forwards;
+}
+.stroke-anim .stroke-number {
+  opacity: 0;
+  animation: show-number 0.2s forwards;
+}
+@keyframes draw-stroke {
+  to {
+    stroke-dashoffset: 0;
+  }
+}
+@keyframes show-number {
+  to {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .stroke-anim path[pathLength],
+  .stroke-anim .stroke-number {
+    animation: none;
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+}
+
 /* Japanese text should never be synthesised into faux bold/italic. */
 :lang(ja) {
   font-synthesis: none;
