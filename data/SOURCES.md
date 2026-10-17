@@ -12,7 +12,7 @@ npm run data:build   # writes kanji, radicals, vocab, and strokes JSON into src/
 | [KANJIDIC2](https://www.edrdg.org/wiki/index.php/KANJIDIC_Project), Electronic Dictionary Research and Development Group | Characters, on/kun readings, English meanings, stroke counts, school grades, frequency ranks, classical radical numbers | [CC BY-SA 4.0](https://www.edrdg.org/edrdg/licence.html) |
 | [davidluzgouveia/kanji-data](https://github.com/davidluzgouveia/kanji-data) (`jlpt_new`, derived from Jonathan Waller's JLPT lists) | New-style JLPT levels (N5–N1); the official JLPT has not published kanji lists since 2010, so these levels are an approximation | MIT (repository); JLPT lists CC BY |
 | [JMdict](https://www.edrdg.org/wiki/index.php/JMdict-EDICT_Dictionary_Project) (English edition), Electronic Dictionary Research and Development Group | Example vocabulary: spelling, reading, and first-sense English glosses (`vocab.json`) | [CC BY-SA 4.0](https://www.edrdg.org/edrdg/licence.html) |
-| [KanjiVG](https://kanjivg.tagaini.net/) by Ulrich Apel, release r20260714 | Stroke paths in stroke order (`strokes.json`) | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
+| [KanjiVG](https://kanjivg.tagaini.net/) by Ulrich Apel, release r20260714 | Stroke paths in stroke order (`strokes.json`); component trees with positions, radical and phonetic markers (`components.json`) | [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/) |
 | [Unicode Character Database](https://www.unicode.org/ucd/) `UnicodeData.txt` | The 214 Kangxi radicals (U+2F00–U+2FD5), their English names and unified-ideograph equivalents | [Unicode License v3](https://www.unicode.org/license.txt) |
 
 Hand-maintained additions (in `scripts/build-data.mts`):
@@ -39,3 +39,16 @@ Stroke order: KanjiVG is pinned to a release. For 46 kanji its stroke count
 differs from KANJIDIC2's, typically because KanjiVG draws a traditional form of
 a component (e.g. 辻 with a two-dot shinnyō); the detail page notes this.
 KanjiVG has no diagram for 89 kanji, mostly the compatibility-ideograph forms.
+
+Components (`src/lib/kanjivg.ts`, `src/lib/decomposition.ts`): each tree comes
+from KanjiVG's nested `<g>` groups. Components that KanjiVG splits into
+numbered parts around other strokes (`kvg:part`, e.g. 二 inside 五) are merged
+into one. Each role shown in the app records its provenance:
+
+- **Radical**: the component matching the kanji's KANJIDIC2 classical radical,
+  falling back to KanjiVG's own radical marker if none matches.
+- **Sound** (phonetic): KanjiVG's `kvg:phon` annotation.
+- **Meaning** (semantic): *inferred by this app*, not stated by a source. It's
+  assigned to the radical when the kanji also has a phonetic component, the
+  usual reading of a phono-semantic (形声) compound. It describes the
+  character's structure, not a verified etymology.

@@ -9,6 +9,11 @@
   --accent: #6d4fb3;
   --accent-soft: #efeaf8;
   --accent-foreground: #ffffff;
+  /* Component colours in decomposition diagrams. */
+  --comp-1: #6d4fb3;
+  --comp-2: #c2410c;
+  --comp-3: #0f766e;
+  --comp-4: #b45309;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -21,6 +26,10 @@
     --accent: #b49cf0;
     --accent-soft: #2a2438;
     --accent-foreground: #131117;
+    --comp-1: #b49cf0;
+    --comp-2: #fb923c;
+    --comp-3: #2dd4bf;
+    --comp-4: #fbbf24;
   }
 }
 
