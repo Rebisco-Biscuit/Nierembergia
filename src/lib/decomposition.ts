@@ -20,12 +20,16 @@ export interface DecomposedComponent {
   position: string | null;
   roles: Role[];
   strokes: number[];
+  /** How many other kanji contain this component (0 if none, or unnamed). */
+  usedInCount: number;
   children: DecomposedComponent[];
 }
 
 export interface DecompositionContext {
   kanjiByChar: Map<string, Kanji>;
   radicals: Radical[];
+  /** Component → kanji containing it; used for `usedInCount`. */
+  componentIndex?: Map<string, string[]>;
 }
 
 export function radicalNumberOf(char: string | undefined, radicals: Radical[]): number | null {
@@ -78,6 +82,9 @@ export function decompose(
         ]
       : [],
     strokes: node.strokes,
+    usedInCount: node.element
+      ? (ctx.componentIndex?.get(node.element) ?? []).filter((k) => k !== kanji.character).length
+      : 0,
     children: node.children.map(build),
   });
 

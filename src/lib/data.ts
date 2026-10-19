@@ -21,12 +21,12 @@ const kanjiByChar = new Map(dataset.kanji.map((k) => [k.character, k]));
 const vocab = vocabJson as Record<string, VocabWord[]>;
 const strokes = strokesJson as Record<string, string[]>;
 const components = componentsJson as Record<string, ComponentNode>;
-const decompositionContext = { kanjiByChar, radicals: dataset.radicals };
-
 export const componentIndex = buildComponentIndex(
   components,
   dataset.kanji.map((k) => k.character),
 );
+
+const decompositionContext = { kanjiByChar, radicals: dataset.radicals, componentIndex };
 
 export interface ComponentDetail {
   character: string;
