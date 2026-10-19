@@ -56,6 +56,19 @@ describe("decompose", () => {
     expect(phon?.note).toBe("Sound component: 土+豆+寸");
   });
 
+  it("counts the other kanji that contain each component", () => {
+    const index = new Map([
+      ["吾", ["語", "悟"]],
+      ["言", ["語"]],
+    ]);
+    const [gon, go] = decompose(ctx.kanjiByChar.get("語")!, components["語"], {
+      ...ctx,
+      componentIndex: index,
+    });
+    expect(go.usedInCount).toBe(1); // 悟, not 語 itself
+    expect(gon.usedInCount).toBe(0);
+  });
+
   it("returns no components for a kanji KanjiVG doesn't split", () => {
     expect(of("一")).toEqual([]);
   });

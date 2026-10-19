@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decodeParam, gradeLabel, kanjiHref, parseKunReading } from "./format";
+import { componentHref, decodeParam, gradeLabel, kanjiHref, parseKunReading } from "./format";
 
 describe("parseKunReading", () => {
   it("splits okurigana", () => {
@@ -35,6 +35,10 @@ describe("kanji URLs", () => {
     const href = kanjiHref("水");
     expect(href).toBe("/kanji/%E6%B0%B4");
     expect(decodeParam(href.split("/")[2])).toBe("水");
+  });
+
+  it("builds component URLs", () => {
+    expect(componentHref("氵")).toBe("/component/%E6%B0%B5");
   });
 
   it("accepts already-decoded or malformed params", () => {

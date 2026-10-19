@@ -24,9 +24,13 @@ with tests, and is ticked off here. The full product spec is in
       name, radical number vs general component, position). Roles carry their
       source: radical (KANJIDIC2), sound (KanjiVG), and meaning (inferred by
       the app, marked with "?").
-- [ ] **Day 4 — Clickable components**
-      Components link to the kanji that contain them; related kanji on the
-      detail page.
+- [x] **Day 4 — Clickable components** (2026-10-19)
+      Reverse index from 1,045 components to the kanji containing them.
+      `/component/[character]` pages list those kanji (most frequent first),
+      with radical info and links between forms like 氵 ↔ 水. Components on
+      detail pages link there with a count, and detail pages show related
+      kanji grouped by shared component (sound components first) plus the
+      kanji that use this kanji as a component.
 - [ ] **Day 5 — Bookmarks and custom collections**
 - [ ] **Day 6 — Basic flashcards and quizzes**
 - [ ] **Day 7 — Persistent study progress**

@@ -20,12 +20,16 @@ export interface DecomposedComponent {
   position: string | null;
   roles: Role[];
   strokes: number[];
+  /** How many other kanji contain this component (0 if none, or unnamed). */
+  usedInCount: number;
   children: DecomposedComponent[];
 }
 
 export interface DecompositionContext {
   kanjiByChar: Map<string, Kanji>;
   radicals: Radical[];
+  /** Component → kanji containing it; used for `usedInCount`. */
+  componentIndex?: Map<string, string[]>;
 }
 
 export function radicalNumberOf(char: string | undefined, radicals: Radical[]): number | null {
@@ -33,13 +37,16 @@ export function radicalNumberOf(char: string | undefined, radicals: Radical[]): 
   return radicals.find((r) => r.character === char || r.variants.includes(char))?.number ?? null;
 }
 
+/** A character's primary meaning as a kanji, else its radical name. */
+export function meaningOf(char: string, ctx: DecompositionContext): string | null {
+  const k = ctx.kanjiByChar.get(char);
+  if (k?.meanings[0]) return k.meanings[0];
+  const n = radicalNumberOf(char, ctx.radicals);
+  return n ? ctx.radicals[n - 1].name : null;
+}
+
 function describe(node: ComponentNode, ctx: DecompositionContext): string | null {
-  const meaning = (char: string) => {
-    const k = ctx.kanjiByChar.get(char);
-    if (k?.meanings[0]) return k.meanings[0];
-    const n = radicalNumberOf(char, ctx.radicals);
-    return n ? ctx.radicals[n - 1].name : null;
-  };
+  const meaning = (char: string) => meaningOf(char, ctx);
 
   const { element, original, partial } = node;
   if (original && original !== element) {
@@ -75,6 +82,9 @@ export function decompose(
         ]
       : [],
     strokes: node.strokes,
+    usedInCount: node.element
+      ? (ctx.componentIndex?.get(node.element) ?? []).filter((k) => k !== kanji.character).length
+      : 0,
     children: node.children.map(build),
   });
 

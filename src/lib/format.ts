@@ -31,6 +31,11 @@ export function kanjiHref(character: string): string {
   return `/kanji/${encodeURIComponent(character)}`;
 }
 
+/** The path to the page listing kanji that contain a component. */
+export function componentHref(character: string): string {
+  return `/component/${encodeURIComponent(character)}`;
+}
+
 /** Decodes a route param, tolerating values that are already decoded. */
 export function decodeParam(param: string): string {
   try {

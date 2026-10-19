@@ -1,4 +1,6 @@
+import Link from "next/link";
 import { positionLabel, type DecomposedComponent, type Role } from "@/lib/decomposition";
+import { componentHref } from "@/lib/format";
 
 // KanjiVG draws on a 109×109 canvas.
 const VIEWBOX = "0 0 109 109";
@@ -70,6 +72,7 @@ function ComponentCard({
   const position = positionLabel(component.position);
   const notes = roles.filter((r) => r.note).map((r) => r.note);
   const nested = depth < MAX_DEPTH ? children : [];
+  const linkable = component.usedInCount > 0;
 
   return (
     <li>
@@ -83,7 +86,17 @@ function ComponentCard({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-baseline gap-x-2">
             <span lang="ja" className={`font-serif leading-none ${depth === 1 ? "text-3xl" : "text-2xl"}`}>
-              {character ?? <span className="font-sans text-sm text-muted">(unnamed group)</span>}
+              {character && linkable ? (
+                <Link
+                  href={componentHref(character)}
+                  className="hover:text-accent"
+                  aria-label={`${character}: see the kanji that contain it`}
+                >
+                  {character}
+                </Link>
+              ) : (
+                (character ?? <span className="font-sans text-sm text-muted">(unnamed group)</span>)
+              )}
             </span>
             {name && <span className="font-medium">{name}</span>}
           </div>
@@ -98,6 +111,13 @@ function ComponentCard({
             <li className="text-xs text-muted">
               {component.strokes.length} stroke{component.strokes.length === 1 ? "" : "s"}
             </li>
+            {character && linkable && (
+              <li className="text-xs">
+                <Link href={componentHref(character)} className="text-accent hover:underline">
+                  in {component.usedInCount.toLocaleString("en")} other kanji →
+                </Link>
+              </li>
+            )}
           </ul>
           {notes.map((note) => (
             <p key={note} className="mt-1 text-xs text-muted">
@@ -160,7 +180,13 @@ export function Decomposition({
           {components.map((c, i) => (
             <span key={i} className="flex items-center gap-2">
               {i > 0 && <span className="font-sans text-xl text-muted">+</span>}
-              <span style={{ color: colorFor(i) }}>{c.character ?? "□"}</span>
+              {c.character && c.usedInCount > 0 ? (
+                <Link href={componentHref(c.character)} style={{ color: colorFor(i) }} className="hover:underline">
+                  {c.character}
+                </Link>
+              ) : (
+                <span style={{ color: colorFor(i) }}>{c.character ?? "□"}</span>
+              )}
             </span>
           ))}
           <span className="font-sans text-xl text-muted">=</span>

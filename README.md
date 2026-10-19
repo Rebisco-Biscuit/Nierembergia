@@ -30,6 +30,12 @@ The search box accepts:
 Filter by JLPT level, school grade, and stroke count. Searches are kept in the
 URL, so they can be shared and bookmarked.
 
+## Pages
+
+- `/kanji/水`: meanings, readings, component breakdown, stroke order,
+  example words, and related kanji.
+- `/component/氵`: every kanji containing a component, most frequent first.
+
 ## Data
 
 Kanji data comes from KANJIDIC2 (CC BY-SA 4.0) and other sources listed in
