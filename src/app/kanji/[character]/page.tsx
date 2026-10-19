@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Decomposition } from "@/components/Decomposition";
+import { KanjiTile } from "@/components/KanjiTile";
 import { StrokeAnimation, StrokeFrames } from "@/components/StrokeOrder";
 import { dataset, getKanjiDetail, type KanjiDetail } from "@/lib/data";
-import { decodeParam, gradeLabel, kanjiHref, parseKunReading } from "@/lib/format";
+import { componentHref, decodeParam, gradeLabel, kanjiHref, parseKunReading } from "@/lib/format";
 
 export function generateStaticParams() {
   return dataset.kanji.map((k) => ({ character: k.character }));
@@ -73,6 +74,8 @@ export default async function KanjiPage({ params }: PageProps<"/kanji/[character
           </Section>
         </div>
       )}
+
+      <RelatedKanji detail={detail} />
     </main>
   );
 }
@@ -225,6 +228,73 @@ function Vocabulary({ detail }: { detail: KanjiDetail }) {
         </ul>
       )}
     </Section>
+  );
+}
+
+function RelatedKanji({ detail }: { detail: KanjiDetail }) {
+  const { related, usedIn, kanji } = detail;
+  if (related.length === 0 && usedIn.total === 0) return null;
+
+  return (
+    <div className="mt-10 space-y-10">
+      {related.length > 0 && (
+        <Section title="Shares components">
+          <div className="space-y-6">
+            {related.map((group) => (
+              <div key={group.component}>
+                <h3 className="mb-2 flex flex-wrap items-baseline gap-x-2 text-sm">
+                  <span>
+                    Also contains{" "}
+                    <Link href={componentHref(group.component)} lang="ja" className="font-serif text-xl text-accent hover:underline">
+                      {group.component}
+                    </Link>
+                    {group.name && <span className="text-muted"> ({group.name})</span>}
+                  </span>
+                  {group.total > group.kanji.length && (
+                    <Link href={componentHref(group.component)} className="text-xs text-accent hover:underline">
+                      all {group.total.toLocaleString("en")} →
+                    </Link>
+                  )}
+                </h3>
+                <TileList kanji={group.kanji} />
+              </div>
+            ))}
+          </div>
+        </Section>
+      )}
+
+      {usedIn.total > 0 && (
+        <Section title="Used as a component in">
+          <p className="mb-2 text-sm text-muted">
+            <span lang="ja" className="font-serif text-base text-foreground">
+              {kanji.character}
+            </span>{" "}
+            appears inside {usedIn.total.toLocaleString("en")} other kanji.
+            {usedIn.total > usedIn.kanji.length && (
+              <>
+                {" "}
+                <Link href={componentHref(kanji.character)} className="text-accent hover:underline">
+                  See all →
+                </Link>
+              </>
+            )}
+          </p>
+          <TileList kanji={usedIn.kanji} />
+        </Section>
+      )}
+    </div>
+  );
+}
+
+function TileList({ kanji }: { kanji: KanjiDetail["usedIn"]["kanji"] }) {
+  return (
+    <ul className="flex flex-wrap gap-2">
+      {kanji.map((k) => (
+        <li key={k.character}>
+          <KanjiTile kanji={k} />
+        </li>
+      ))}
+    </ul>
   );
 }
 

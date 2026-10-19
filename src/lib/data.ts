@@ -4,7 +4,7 @@ import radicalsJson from "@/data/radicals.json";
 import strokesJson from "@/data/strokes.json";
 import vocabJson from "@/data/vocab.json";
 import componentsJson from "@/data/components.json";
-import { buildComponentIndex } from "./component-index";
+import { buildComponentIndex, relatedByComponent } from "./component-index";
 import { decompose, meaningOf, radicalNumberOf, type DecomposedComponent } from "./decomposition";
 import type { ComponentNode } from "./kanjivg";
 import type { Dataset, Kanji, Radical } from "./types";
@@ -73,19 +73,50 @@ export interface KanjiDetail {
    * component, null if KanjiVG has no data for it.
    */
   components: DecomposedComponent[] | null;
+  /** Other kanji sharing each direct component; sound components first. */
+  related: { component: string; name: string | null; kanji: Kanji[]; total: number }[];
+  /** Kanji that contain this kanji as a component (first few), and how many in all. */
+  usedIn: { kanji: Kanji[]; total: number };
 }
+
+const RELATED_PER_COMPONENT = 12;
+const USED_IN_SHOWN = 24;
 
 export function getKanjiDetail(character: string): KanjiDetail | null {
   const kanji = kanjiByChar.get(character);
   if (!kanji) return null;
+  const decomposed = components[character]
+    ? decompose(kanji, components[character], decompositionContext)
+    : null;
+  const direct = (decomposed ?? []).filter((c) => c.character);
+  const isSound = (char: string) =>
+    direct.some((c) => c.character === char && c.roles.some((r) => r.kind === "phonetic"));
+  const related = relatedByComponent(
+    character,
+    direct.map((c) => c.character!),
+    componentIndex,
+    RELATED_PER_COMPONENT,
+  )
+    .sort((a, b) => Number(isSound(b.component)) - Number(isSound(a.component)))
+    .map((g) => ({
+      component: g.component,
+      name: meaningOf(g.component, decompositionContext),
+      kanji: g.kanji.map((c) => kanjiByChar.get(c)!),
+      total: g.total,
+    }));
+  const containing = componentIndex.get(character) ?? [];
+
   return {
     kanji,
     radical: radicalByNumber.get(kanji.radical)!,
     vocabulary: vocab[character] ?? [],
     strokes: strokes[character] ?? null,
     traditionalForms: dataset.kanji.filter((k) => k.variantOf === character),
-    components: components[character]
-      ? decompose(kanji, components[character], decompositionContext)
-      : null,
+    components: decomposed,
+    related,
+    usedIn: {
+      kanji: containing.slice(0, USED_IN_SHOWN).map((c) => kanjiByChar.get(c)!),
+      total: containing.length,
+    },
   };
 }
