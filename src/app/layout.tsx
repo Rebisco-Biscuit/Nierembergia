@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Noto_Sans_JP, Noto_Serif_JP } from "next/font/google";
+import { SiteHeader } from "@/components/SiteHeader";
 import "./globals.css";
 
 // CJK fonts are large; let the browser fetch only the glyphs it needs.
@@ -29,6 +30,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${notoSans.variable} ${notoSerif.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col font-sans">
+        <SiteHeader />
         {children}
         <footer className="mx-auto w-full max-w-5xl px-4 py-6 text-xs text-muted">
           Kanji data from{" "}

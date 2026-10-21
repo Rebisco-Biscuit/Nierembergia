@@ -3,7 +3,7 @@ import { kanjiHref } from "@/lib/format";
 import type { Kanji } from "@/lib/types";
 
 /** A compact link to a kanji: the character with its first meaning. */
-export function KanjiTile({ kanji }: { kanji: Kanji }) {
+export function KanjiTile({ kanji }: { kanji: Pick<Kanji, "character" | "meanings"> }) {
   return (
     <Link
       href={kanjiHref(kanji.character)}
