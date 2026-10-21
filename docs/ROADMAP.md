@@ -31,7 +31,12 @@ with tests, and is ticked off here. The full product spec is in
       detail pages link there with a count, and detail pages show related
       kanji grouped by shared component (sound components first) plus the
       kanji that use this kanji as a component.
-- [ ] **Day 5 — Bookmarks and custom collections**
+- [x] **Day 5 — Bookmarks and custom collections** (2026-10-21)
+      Bookmark toggle and a collections panel on every kanji page; `/library`
+      to view, rename, delete, and prune collections and bookmarks; header
+      link with the bookmark count. Saved in localStorage (versioned and
+      validated on load, synced across tabs, in-memory fallback when storage
+      is blocked). No accounts yet, so the library stays in one browser.
 - [ ] **Day 6 — Basic flashcards and quizzes**
 - [ ] **Day 7 — Persistent study progress**
 
