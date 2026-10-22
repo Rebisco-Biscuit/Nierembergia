@@ -14,6 +14,11 @@
   --comp-2: #c2410c;
   --comp-3: #0f766e;
   --comp-4: #b45309;
+  /* Answer feedback. */
+  --success: #15803d;
+  --success-soft: #e8f5ec;
+  --danger: #b91c1c;
+  --danger-soft: #fbeaea;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -30,6 +35,10 @@
     --comp-2: #fb923c;
     --comp-3: #2dd4bf;
     --comp-4: #fbbf24;
+    --success: #4ade80;
+    --success-soft: #16281d;
+    --danger: #f87171;
+    --danger-soft: #2d1a1a;
   }
 }
 
@@ -42,6 +51,10 @@
   --color-accent: var(--accent);
   --color-accent-soft: var(--accent-soft);
   --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-success-soft: var(--success-soft);
+  --color-danger: var(--danger);
+  --color-danger-soft: var(--danger-soft);
   --font-sans: var(--font-noto-sans-jp), system-ui, sans-serif;
   --font-serif: var(--font-noto-serif-jp), serif;
 }

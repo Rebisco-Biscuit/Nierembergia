@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import {
   MAX_COLLECTION_NAME,
   cleanName,
@@ -13,13 +13,9 @@ import {
   type Collection,
 } from "@/lib/library";
 import { KanjiTile } from "./KanjiTile";
-import { newCollectionId, useLibrary } from "./useLibrary";
+import { newCollectionId, useHydrated, useLibrary } from "./useLibrary";
 
 type Meanings = Record<string, string>;
-
-const noop = () => () => {};
-/** False during server rendering and hydration, true once running in the browser. */
-const useHydrated = () => useSyncExternalStore(noop, () => true, () => false);
 
 export function LibraryView({ meanings }: { meanings: Meanings }) {
   const [library, update] = useLibrary();

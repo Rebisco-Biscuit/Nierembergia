@@ -36,6 +36,11 @@ export function useLibrary(): [Library, LibraryStore["update"]] {
   return [library, s.update.bind(s)];
 }
 
+const noopSubscribe = () => () => {};
+
+/** False during server rendering and hydration, true once running in the browser. */
+export const useHydrated = () => useSyncExternalStore(noopSubscribe, () => true, () => false);
+
 /** A random id for a new collection. */
 export function newCollectionId(): string {
   return typeof crypto !== "undefined" && "randomUUID" in crypto
