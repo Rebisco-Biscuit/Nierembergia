@@ -44,7 +44,8 @@ export function Flashcards({
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (done || e.target instanceof HTMLInputElement || e.metaKey || e.ctrlKey) return;
-      if (!revealed && (e.key === " " || e.key === "Enter")) {
+      // A focused button already handles Enter/Space itself.
+      if (!revealed && (e.key === " " || e.key === "Enter") && !(e.target instanceof HTMLButtonElement)) {
         e.preventDefault();
         setRevealed(true);
       } else if (revealed && (e.key === "1" || e.key === "ArrowLeft")) grade(false);
