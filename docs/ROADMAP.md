@@ -37,7 +37,13 @@ with tests, and is ticked off here. The full product spec is in
       link with the bookmark count. Saved in localStorage (versioned and
       validated on load, synced across tabs, in-memory fallback when storage
       is blocked). No accounts yet, so the library stays in one browser.
-- [ ] **Day 6 — Basic flashcards and quizzes**
+- [x] **Day 6 — Basic flashcards and quizzes** (2026-10-22)
+      `/study`: pick a deck (bookmarks, a collection, or a JLPT level), a
+      mode, and a length. Flashcards are self-graded (reveal with Space,
+      grade with 1/2). Quizzes are multiple choice (kanji → meaning,
+      meaning → kanji, kanji → reading) with same-level distractors that can
+      never also be correct, and an explanation after every answer. Both end
+      with a summary and a "review missed" round. Results aren't saved yet.
 - [ ] **Day 7 — Persistent study progress**
 
 ## After the MVP

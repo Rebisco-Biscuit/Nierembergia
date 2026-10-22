@@ -35,6 +35,8 @@ URL, so they can be shared and bookmarked.
 - `/kanji/水`: meanings, readings, component breakdown, stroke order,
   example words, and related kanji.
 - `/component/氵`: every kanji containing a component, most frequent first.
+- `/study`: flashcards and quizzes from your bookmarks, a collection, or a
+  JLPT level.
 - `/library`: your bookmarks and collections. These are saved in your browser
   (localStorage), so they don't follow you to other devices yet.
 
