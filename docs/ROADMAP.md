@@ -44,7 +44,15 @@ with tests, and is ticked off here. The full product spec is in
       meaning → kanji, kanji → reading) with same-level distractors that can
       never also be correct, and an explanation after every answer. Both end
       with a summary and a "review missed" round. Results aren't saved yet.
-- [ ] **Day 7 — Persistent study progress**
+- [x] **Day 7 — Persistent study progress** (2026-10-23)
+      Every flashcard and quiz answer is saved per kanji (times seen,
+      correct, current streak, last seen), plus a log of finished sessions.
+      `/study` shows kanji studied, accuracy, mastered (3 right in a row),
+      day streak, recent sessions, and a "weak kanji" deck of those missed
+      last time; progress can be reset. Detail pages show your stats for that
+      kanji. Saved in localStorage like the library.
+
+The MVP is complete. Next up is the first item below.
 
 ## After the MVP
 
