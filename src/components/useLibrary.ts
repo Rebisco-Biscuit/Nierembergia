@@ -2,7 +2,14 @@
 
 import { useEffect, useSyncExternalStore } from "react";
 import type { Library } from "@/lib/library";
-import { createLibraryStore, STORAGE_KEY, type LibraryStore } from "@/lib/library-store";
+import {
+  createLibraryStore,
+  createProgressStore,
+  type JsonStore,
+  type LibraryStore,
+  type ProgressStore,
+} from "@/lib/library-store";
+import type { Progress } from "@/lib/progress";
 
 function browserStorage() {
   try {
@@ -12,29 +19,35 @@ function browserStorage() {
   }
 }
 
-// One store per browser tab, shared by every component.
-let store: LibraryStore | null = null;
-const getStore = () => (store ??= createLibraryStore(browserStorage()));
+// One store of each kind per browser tab, shared by every component.
+let libraryStore: LibraryStore | null = null;
+let progressStore: ProgressStore | null = null;
+const getLibraryStore = () => (libraryStore ??= createLibraryStore(browserStorage()));
+const getProgressStore = () => (progressStore ??= createProgressStore(browserStorage()));
 
-/**
- * The user's bookmarks and collections, saved in this browser. Renders as an
- * empty library on the server and during hydration, then fills in.
- */
-export function useLibrary(): [Library, LibraryStore["update"]] {
-  const s = getStore();
-  const library = useSyncExternalStore(s.subscribe, s.getSnapshot, s.getServerSnapshot);
+/** Subscribes to a store, re-reading it when another tab writes its key. */
+function useJsonStore<T>(s: JsonStore<T>): [T, JsonStore<T>["update"]] {
+  const value = useSyncExternalStore(s.subscribe, s.getSnapshot, s.getServerSnapshot);
 
-  // Keep tabs in sync: another tab writing the key fires "storage" here.
   useEffect(() => {
     const onStorage = (e: StorageEvent) => {
-      if (e.key === STORAGE_KEY || e.key === null) s.refresh();
+      if (e.key === s.key || e.key === null) s.refresh();
     };
     window.addEventListener("storage", onStorage);
     return () => window.removeEventListener("storage", onStorage);
   }, [s]);
 
-  return [library, s.update.bind(s)];
+  return [value, s.update];
 }
+
+/**
+ * The user's bookmarks and collections, saved in this browser. Renders as an
+ * empty library on the server and during hydration, then fills in.
+ */
+export const useLibrary = (): [Library, LibraryStore["update"]] => useJsonStore(getLibraryStore());
+
+/** The user's study progress, saved in this browser. Empty on the server. */
+export const useProgress = (): [Progress, ProgressStore["update"]] => useJsonStore(getProgressStore());
 
 const noopSubscribe = () => () => {};
 

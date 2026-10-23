@@ -78,6 +78,18 @@ describe("createLibraryStore", () => {
     expect(store.getSnapshot().bookmarks).toEqual(["水"]);
   });
 
+  it("keeps progress under its own key", async () => {
+    const { createProgressStore } = await import("./library-store");
+    const { recordAnswer } = await import("./progress");
+    const storage = memoryStorage();
+    const library = createLibraryStore(storage, "lib");
+    const progress = createProgressStore(storage, "prog");
+    progress.update((p) => recordAnswer(p, "水", true, 1));
+    expect(JSON.parse(storage.data.prog).kanji["水"].seen).toBe(1);
+    expect(storage.data.lib).toBeUndefined();
+    expect(library.getSnapshot().bookmarks).toEqual([]);
+  });
+
   it("gives the server an empty library", () => {
     const storage = memoryStorage({ lib: JSON.stringify({ version: 1, bookmarks: ["水"], collections: [] }) });
     expect(createLibraryStore(storage, "lib").getServerSnapshot().bookmarks).toEqual([]);

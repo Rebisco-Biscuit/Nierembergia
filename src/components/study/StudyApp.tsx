@@ -12,9 +12,11 @@ import {
   type StudyKanji,
 } from "@/lib/study";
 import type { JlptLevel } from "@/lib/types";
-import { useHydrated, useLibrary } from "../useLibrary";
+import { recordAnswer, recordSession } from "@/lib/progress";
+import { useHydrated, useLibrary, useProgress } from "../useLibrary";
 import { Flashcards } from "./Flashcards";
 import { Quiz } from "./Quiz";
+import type { SessionResult } from "./SessionSummary";
 
 type Mode = "flashcards" | "quiz";
 const LENGTHS = [10, 20, Infinity] as const;
@@ -24,8 +26,9 @@ type Session =
   | { mode: "flashcards"; cards: StudyKanji[]; key: number }
   | { mode: "quiz"; questions: Question[]; key: number };
 
-// Only ever called from event handlers, when a session starts.
+// Only ever called from event handlers, never during render.
 const freshSeed = () => Math.floor(Math.random() * 2 ** 32);
+const now = () => Date.now();
 let sessionCount = 0;
 const nextSessionKey = () => ++sessionCount;
 
@@ -34,6 +37,7 @@ const sourceKey = (s: DeckSource) =>
 
 export function StudyApp({ all }: { all: StudyKanji[] }) {
   const [library] = useLibrary();
+  const [, updateProgress] = useProgress();
   const hydrated = useHydrated();
   const [source, setSource] = useState<DeckSource>({ kind: "jlpt", level: 5 });
   const [mode, setMode] = useState<Mode>("flashcards");
@@ -84,7 +88,19 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
   const exit = () => setSession(null);
 
   if (session) {
+    const studyMode = session.mode;
     const common = {
+      onAnswer: (k: StudyKanji, correct: boolean) =>
+        updateProgress((p) => recordAnswer(p, k.character, correct, now())),
+      onFinish: (results: SessionResult[]) =>
+        updateProgress((p) =>
+          recordSession(p, {
+            at: now(),
+            mode: studyMode,
+            total: results.length,
+            correct: results.filter((r) => r.correct).length,
+          }),
+        ),
       onRestart: () => start(deck(), session.mode),
       onRetry: (missed: StudyKanji[]) => start(missed, session.mode),
       onExit: exit,
