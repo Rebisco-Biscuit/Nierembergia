@@ -3,18 +3,12 @@
 import Link from "next/link";
 import { useState } from "react";
 import { seededRandom, shuffle } from "@/lib/random";
-import {
-  QUESTION_KINDS,
-  deckFromSource,
-  makeQuiz,
-  type DeckSource,
-  type Question,
-  type StudyKanji,
-} from "@/lib/study";
+import { QUESTION_KINDS, deckFromSource, makeQuiz, type DeckSource, type Question, type StudyKanji } from "@/lib/study";
 import type { JlptLevel } from "@/lib/types";
-import { recordAnswer, recordSession } from "@/lib/progress";
+import { emptyProgress, recordAnswer, recordSession, summarize } from "@/lib/progress";
 import { useHydrated, useLibrary, useProgress } from "../useLibrary";
 import { Flashcards } from "./Flashcards";
+import { ProgressPanel } from "./ProgressPanel";
 import { Quiz } from "./Quiz";
 import type { SessionResult } from "./SessionSummary";
 
@@ -23,8 +17,7 @@ const LENGTHS = [10, 20, Infinity] as const;
 const JLPT_LEVELS: JlptLevel[] = [5, 4, 3, 2, 1];
 
 type Session =
-  | { mode: "flashcards"; cards: StudyKanji[]; key: number }
-  | { mode: "quiz"; questions: Question[]; key: number };
+  { mode: "flashcards"; cards: StudyKanji[]; key: number } | { mode: "quiz"; questions: Question[]; key: number };
 
 // Only ever called from event handlers, never during render.
 const freshSeed = () => Math.floor(Math.random() * 2 ** 32);
@@ -33,11 +26,11 @@ let sessionCount = 0;
 const nextSessionKey = () => ++sessionCount;
 
 const sourceKey = (s: DeckSource) =>
-  s.kind === "jlpt" ? `jlpt:${s.level}` : s.kind === "collection" ? `c:${s.id}` : "bookmarks";
+  s.kind === "jlpt" ? `jlpt:${s.level}` : s.kind === "collection" ? `c:${s.id}` : s.kind;
 
 export function StudyApp({ all }: { all: StudyKanji[] }) {
   const [library] = useLibrary();
-  const [, updateProgress] = useProgress();
+  const [progress, updateProgress] = useProgress();
   const hydrated = useHydrated();
   const [source, setSource] = useState<DeckSource>({ kind: "jlpt", level: 5 });
   const [mode, setMode] = useState<Mode>("flashcards");
@@ -46,10 +39,24 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
   const [error, setError] = useState<string | null>(null);
 
   if (!hydrated) {
-    return <div className="mt-8 h-64 animate-pulse rounded-2xl border border-border bg-surface" aria-busy="true" aria-label="Loading" />;
+    return (
+      <div
+        className="mt-8 h-64 animate-pulse rounded-2xl border border-border bg-surface"
+        aria-busy="true"
+        aria-label="Loading"
+      />
+    );
   }
 
+  const weak = summarize(progress, now()).weak;
+  const byChar = new Map(all.map((k) => [k.character, k]));
+
   const sources: { source: DeckSource; label: string; count: number }[] = [
+    {
+      source: { kind: "weak" },
+      label: "Weak kanji",
+      count: deckFromSource({ kind: "weak" }, library, all, weak).length,
+    },
     { source: { kind: "bookmarks" }, label: "Bookmarks", count: library.bookmarks.length },
     ...library.collections.map((c) => ({
       source: { kind: "collection", id: c.id } as DeckSource,
@@ -84,7 +91,7 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
     setError(null);
   };
 
-  const deck = () => deckFromSource(selected.source, library, all);
+  const deck = () => deckFromSource(selected.source, library, all, weak);
   const exit = () => setSession(null);
 
   if (session) {
@@ -120,94 +127,122 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
   }
 
   return (
-    <form
-      className="mt-8 space-y-8"
-      onSubmit={(e) => {
-        e.preventDefault();
-        start(deck());
-      }}
-    >
-      <fieldset>
-        <legend className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">Deck</legend>
-        <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-          {sources.map((s) => {
-            const key = sourceKey(s.source);
-            const checked = key === sourceKey(selected.source);
-            const empty = s.count === 0;
-            return (
-              <li key={key}>
+    <div className="mt-8 space-y-10">
+      <ProgressPanel
+        progress={progress}
+        byChar={byChar}
+        onStudyWeak={() => {
+          setSource({ kind: "weak" });
+          start(deckFromSource({ kind: "weak" }, library, all, weak));
+        }}
+        onReset={() => updateProgress(() => emptyProgress())}
+      />
+      <form
+        className="space-y-8"
+        onSubmit={(e) => {
+          e.preventDefault();
+          start(deck());
+        }}
+      >
+        <fieldset>
+          <legend className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">Deck</legend>
+          <ul className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {sources.map((s) => {
+              const key = sourceKey(s.source);
+              const checked = key === sourceKey(selected.source);
+              const empty = s.count === 0;
+              return (
+                <li key={key}>
+                  <label
+                    className={`flex cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 py-3 ${
+                      checked ? "border-accent bg-accent-soft" : "border-border bg-surface"
+                    } ${empty ? "cursor-not-allowed opacity-50" : "hover:border-accent"}`}
+                  >
+                    <span className="flex items-center gap-2">
+                      <input
+                        type="radio"
+                        name="deck"
+                        checked={checked}
+                        disabled={empty}
+                        onChange={() => setSource(s.source)}
+                        className="accent-[var(--accent)]"
+                      />
+                      <span className="truncate">{s.label}</span>
+                    </span>
+                    <span className="text-sm text-muted">{s.count}</span>
+                  </label>
+                </li>
+              );
+            })}
+          </ul>
+          {library.bookmarks.length === 0 && library.collections.length === 0 && (
+            <p className="mt-3 text-sm text-muted">
+              Bookmark kanji or build collections from any{" "}
+              <Link href="/" className="text-accent hover:underline">
+                kanji page
+              </Link>{" "}
+              to study your own decks.
+            </p>
+          )}
+        </fieldset>
+
+        <div className="flex flex-wrap gap-8">
+          <fieldset>
+            <legend className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">Mode</legend>
+            <div className="flex gap-2">
+              {(["flashcards", "quiz"] as const).map((m) => (
                 <label
-                  className={`flex cursor-pointer items-center justify-between gap-3 rounded-xl border px-4 py-3 ${
-                    checked ? "border-accent bg-accent-soft" : "border-border bg-surface"
-                  } ${empty ? "cursor-not-allowed opacity-50" : "hover:border-accent"}`}
+                  key={m}
+                  className={`cursor-pointer rounded-lg border px-4 py-2 text-sm ${mode === m ? "border-accent bg-accent-soft" : "border-border"}`}
                 >
-                  <span className="flex items-center gap-2">
-                    <input
-                      type="radio"
-                      name="deck"
-                      checked={checked}
-                      disabled={empty}
-                      onChange={() => setSource(s.source)}
-                      className="accent-[var(--accent)]"
-                    />
-                    <span className="truncate">{s.label}</span>
-                  </span>
-                  <span className="text-sm text-muted">{s.count}</span>
+                  <input
+                    type="radio"
+                    name="mode"
+                    className="sr-only"
+                    checked={mode === m}
+                    onChange={() => setMode(m)}
+                  />
+                  {m === "flashcards" ? "Flashcards" : "Quiz"}
                 </label>
-              </li>
-            );
-          })}
-        </ul>
-        {library.bookmarks.length === 0 && library.collections.length === 0 && (
-          <p className="mt-3 text-sm text-muted">
-            Bookmark kanji or build collections from any{" "}
-            <Link href="/" className="text-accent hover:underline">
-              kanji page
-            </Link>{" "}
-            to study your own decks.
+              ))}
+            </div>
+          </fieldset>
+          <fieldset>
+            <legend className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">Length</legend>
+            <div className="flex gap-2">
+              {LENGTHS.map((n) => (
+                <label
+                  key={n}
+                  className={`cursor-pointer rounded-lg border px-4 py-2 text-sm ${length === n ? "border-accent bg-accent-soft" : "border-border"}`}
+                >
+                  <input
+                    type="radio"
+                    name="length"
+                    className="sr-only"
+                    checked={length === n}
+                    onChange={() => setLength(n)}
+                  />
+                  {n === Infinity ? "All" : n}
+                </label>
+              ))}
+            </div>
+          </fieldset>
+        </div>
+
+        {error && (
+          <p role="alert" className="text-sm text-danger">
+            {error}
           </p>
         )}
-      </fieldset>
 
-      <div className="flex flex-wrap gap-8">
-        <fieldset>
-          <legend className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">Mode</legend>
-          <div className="flex gap-2">
-            {(["flashcards", "quiz"] as const).map((m) => (
-              <label key={m} className={`cursor-pointer rounded-lg border px-4 py-2 text-sm ${mode === m ? "border-accent bg-accent-soft" : "border-border"}`}>
-                <input type="radio" name="mode" className="sr-only" checked={mode === m} onChange={() => setMode(m)} />
-                {m === "flashcards" ? "Flashcards" : "Quiz"}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-        <fieldset>
-          <legend className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">Length</legend>
-          <div className="flex gap-2">
-            {LENGTHS.map((n) => (
-              <label key={n} className={`cursor-pointer rounded-lg border px-4 py-2 text-sm ${length === n ? "border-accent bg-accent-soft" : "border-border"}`}>
-                <input type="radio" name="length" className="sr-only" checked={length === n} onChange={() => setLength(n)} />
-                {n === Infinity ? "All" : n}
-              </label>
-            ))}
-          </div>
-        </fieldset>
-      </div>
-
-      {error && (
-        <p role="alert" className="text-sm text-danger">
-          {error}
-        </p>
-      )}
-
-      <button
-        type="submit"
-        disabled={selected.count === 0}
-        className="rounded-lg bg-accent px-6 py-3 font-medium text-accent-foreground disabled:opacity-40"
-      >
-        Start {mode === "flashcards" ? "flashcards" : "quiz"}: {selected.label} (
-        {Math.min(length, selected.count)})
-      </button>
-    </form>
+        <button
+          type="submit"
+          disabled={selected.count === 0}
+          className="rounded-lg bg-accent px-6 py-3 font-medium text-accent-foreground disabled:opacity-40"
+        >
+          Start {mode === "flashcards" ? "flashcards" : "quiz"}: {selected.label} ({Math.min(length, selected.count)})
+        </button>
+      </form>
+    </div>
   );
 }
