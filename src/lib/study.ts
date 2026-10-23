@@ -16,16 +16,25 @@ export const toStudyKanji = (k: Kanji): StudyKanji => ({
 export type DeckSource =
   | { kind: "bookmarks" }
   | { kind: "collection"; id: string }
-  | { kind: "jlpt"; level: JlptLevel };
+  | { kind: "jlpt"; level: JlptLevel }
+  /** Kanji missed the last time they came up (see progress.ts). */
+  | { kind: "weak" };
 
 /** The kanji a deck source refers to, skipping any not in `all`. */
-export function deckFromSource(source: DeckSource, library: Library, all: StudyKanji[]): StudyKanji[] {
+export function deckFromSource(
+  source: DeckSource,
+  library: Library,
+  all: StudyKanji[],
+  weak: string[] = [],
+): StudyKanji[] {
   if (source.kind === "jlpt") return all.filter((k) => k.jlpt === source.level);
   const byChar = new Map(all.map((k) => [k.character, k]));
   const chars =
     source.kind === "bookmarks"
       ? library.bookmarks
-      : (library.collections.find((c) => c.id === source.id)?.kanji ?? []);
+      : source.kind === "weak"
+        ? weak
+        : (library.collections.find((c) => c.id === source.id)?.kanji ?? []);
   return chars.flatMap((c) => byChar.get(c) ?? []);
 }
 

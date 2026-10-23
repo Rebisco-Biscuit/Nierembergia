@@ -1,6 +1,8 @@
 import { emptyLibrary, parseLibrary, type Library } from "./library";
+import { emptyProgress, parseProgress, type Progress } from "./progress";
 
 export const STORAGE_KEY = "nierembergia:library";
+export const PROGRESS_KEY = "nierembergia:progress";
 
 /** The subset of the Web Storage API the store needs. */
 export interface StorageLike {
@@ -8,25 +10,34 @@ export interface StorageLike {
   setItem(key: string, value: string): void;
 }
 
-export interface LibraryStore {
-  getSnapshot(): Library;
-  getServerSnapshot(): Library;
+export interface JsonStore<T> {
+  key: string;
+  getSnapshot(): T;
+  getServerSnapshot(): T;
   subscribe(listener: () => void): () => void;
-  update(change: (library: Library) => Library): void;
+  update(change: (value: T) => T): void;
   /** Re-reads storage, e.g. after another tab changed it. */
   refresh(): void;
 }
 
+export type LibraryStore = JsonStore<Library>;
+export type ProgressStore = JsonStore<Progress>;
+
 /**
- * A small external store for useSyncExternalStore. Storage may be missing or
- * throw (private mode, blocked site data); the store then keeps working in
- * memory for the session.
+ * A small external store for useSyncExternalStore, holding one JSON value
+ * under one storage key. Storage may be missing or throw (private mode,
+ * blocked site data); the store then keeps working in memory for the session.
  */
-export function createLibraryStore(storage: StorageLike | null, key = STORAGE_KEY): LibraryStore {
+export function createJsonStore<T>(
+  storage: StorageLike | null,
+  key: string,
+  parse: (raw: string | null) => T,
+  empty: () => T,
+): JsonStore<T> {
   const listeners = new Set<() => void>();
-  const serverSnapshot = emptyLibrary();
+  const serverSnapshot = empty();
   let raw: string | null = null;
-  let snapshot: Library | null = null;
+  let snapshot: T | null = null;
 
   const read = (): string | null => {
     try {
@@ -38,17 +49,18 @@ export function createLibraryStore(storage: StorageLike | null, key = STORAGE_KE
 
   const load = () => {
     const next = read();
-    if (snapshot && next === raw) return false;
+    if (snapshot !== null && next === raw) return false;
     raw = next;
-    snapshot = parseLibrary(next);
+    snapshot = parse(next);
     return true;
   };
 
   const emit = () => listeners.forEach((l) => l());
 
-  return {
+  const store: JsonStore<T> = {
+    key,
     getSnapshot() {
-      if (!snapshot) load();
+      if (snapshot === null) load();
       return snapshot!;
     },
     getServerSnapshot: () => serverSnapshot,
@@ -57,7 +69,7 @@ export function createLibraryStore(storage: StorageLike | null, key = STORAGE_KE
       return () => listeners.delete(listener);
     },
     update(change) {
-      const current = this.getSnapshot();
+      const current = store.getSnapshot();
       const next = change(current);
       if (next === current) return;
       snapshot = next;
@@ -73,4 +85,11 @@ export function createLibraryStore(storage: StorageLike | null, key = STORAGE_KE
       if (load()) emit();
     },
   };
+  return store;
 }
+
+export const createLibraryStore = (storage: StorageLike | null, key = STORAGE_KEY): LibraryStore =>
+  createJsonStore(storage, key, parseLibrary, emptyLibrary);
+
+export const createProgressStore = (storage: StorageLike | null, key = PROGRESS_KEY): ProgressStore =>
+  createJsonStore(storage, key, parseProgress, emptyProgress);

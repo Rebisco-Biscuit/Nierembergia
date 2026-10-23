@@ -3,6 +3,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Decomposition } from "@/components/Decomposition";
 import { KanjiTile } from "@/components/KanjiTile";
+import { KanjiProgress } from "@/components/KanjiProgress";
 import { LibraryControls } from "@/components/LibraryControls";
 import { StrokeAnimation, StrokeFrames } from "@/components/StrokeOrder";
 import { dataset, getKanjiDetail, type KanjiDetail } from "@/lib/data";
@@ -145,6 +146,7 @@ function Hero({ detail }: { detail: KanjiDetail }) {
           ))}
         </dl>
         <LibraryControls character={kanji.character} />
+        <KanjiProgress character={kanji.character} />
       </div>
     </header>
   );

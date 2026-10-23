@@ -53,6 +53,11 @@ describe("deckFromSource", () => {
     expect(n5.every((k) => k.jlpt === 5)).toBe(true);
   });
 
+  it("uses the weak list, in its order", () => {
+    expect(deckFromSource({ kind: "weak" }, lib, all, ["木", "水"]).map((k) => k.character)).toEqual(["木", "水"]);
+    expect(deckFromSource({ kind: "weak" }, lib, all)).toEqual([]);
+  });
+
   it("skips characters missing from the dataset", () => {
     const odd = toggleBookmark(emptyLibrary(), "☃");
     expect(deckFromSource({ kind: "bookmarks" }, odd, all)).toEqual([]);
