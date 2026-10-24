@@ -4,6 +4,7 @@ import radicalsJson from "@/data/radicals.json";
 import strokesJson from "@/data/strokes.json";
 import vocabJson from "@/data/vocab.json";
 import componentsJson from "@/data/components.json";
+import { buildCatalog, buildComponentUses } from "./component-explorer";
 import { buildComponentIndex, relatedByComponent } from "./component-index";
 import { decompose, meaningOf, radicalNumberOf, type DecomposedComponent } from "./decomposition";
 import type { ComponentNode } from "./kanjivg";
@@ -27,6 +28,19 @@ export const componentIndex = buildComponentIndex(
 );
 
 const decompositionContext = { kanjiByChar, radicals: dataset.radicals, componentIndex };
+
+/** How each kanji uses each component (position, partner components). */
+export const componentUses = buildComponentUses(
+  components,
+  dataset.kanji.map((k) => k.character),
+);
+
+/** All components, most used first, for the explorer. */
+export const componentCatalog = buildCatalog(
+  componentUses,
+  (char) => meaningOf(char, decompositionContext),
+  dataset.radicals,
+);
 
 export interface ComponentDetail {
   character: string;
