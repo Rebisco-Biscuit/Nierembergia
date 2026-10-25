@@ -1,6 +1,6 @@
 import { radicalNumberOf } from "./decomposition";
 import type { ComponentNode } from "./kanjivg";
-import type { Radical } from "./types";
+import type { Kanji, Radical } from "./types";
 
 /** How one kanji uses a component. */
 export interface ComponentUse {
@@ -111,4 +111,15 @@ export function tally<T>(values: T[]): { value: T; count: number }[] {
   return [...counts.entries()]
     .map(([value, count]) => ({ value, count }))
     .sort((a, b) => b.count - a.count);
+}
+
+/** A kanji containing a component, with what the component page filters on. */
+export interface ComponentUseItem {
+  character: string;
+  meaning: string;
+  jlpt: Kanji["jlpt"];
+  strokes: number;
+  frequency: number | null;
+  position: string | null;
+  partners: string[];
 }
