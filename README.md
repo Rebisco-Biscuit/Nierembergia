@@ -34,7 +34,9 @@ URL, so they can be shared and bookmarked.
 
 - `/kanji/水`: meanings, readings, component breakdown, stroke order,
   example words, and related kanji.
-- `/component/氵`: every kanji containing a component, most frequent first.
+- `/components`: search all components by character, name, or radical number.
+- `/component/氵`: every kanji containing a component, with filters by level,
+  strokes, frequency, position, and partner component.
 - `/study`: flashcards and quizzes from your bookmarks, a collection, a JLPT
   level, or the kanji you missed last time, plus your study progress.
 - `/library`: your bookmarks and collections.

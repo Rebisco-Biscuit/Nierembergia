@@ -4,6 +4,7 @@ import radicalsJson from "@/data/radicals.json";
 import strokesJson from "@/data/strokes.json";
 import vocabJson from "@/data/vocab.json";
 import componentsJson from "@/data/components.json";
+import { buildCatalog, buildComponentUses, type ComponentUseItem } from "./component-explorer";
 import { buildComponentIndex, relatedByComponent } from "./component-index";
 import { decompose, meaningOf, radicalNumberOf, type DecomposedComponent } from "./decomposition";
 import type { ComponentNode } from "./kanjivg";
@@ -28,6 +29,19 @@ export const componentIndex = buildComponentIndex(
 
 const decompositionContext = { kanjiByChar, radicals: dataset.radicals, componentIndex };
 
+/** How each kanji uses each component (position, partner components). */
+export const componentUses = buildComponentUses(
+  components,
+  dataset.kanji.map((k) => k.character),
+);
+
+/** All components, most used first, for the explorer. */
+export const componentCatalog = buildCatalog(
+  componentUses,
+  (char) => meaningOf(char, decompositionContext),
+  dataset.radicals,
+);
+
 export interface ComponentDetail {
   character: string;
   name: string | null;
@@ -39,7 +53,10 @@ export interface ComponentDetail {
   otherForms: string[];
   /** Kanji containing the component, most frequent first. */
   usedIn: Kanji[];
+  /** How each of those kanji uses it, for filtering by position or partner. */
+  uses: ComponentUseItem[];
 }
+
 
 export function getComponentDetail(character: string): ComponentDetail | null {
   const usedIn = componentIndex.get(character);
@@ -57,6 +74,18 @@ export function getComponentDetail(character: string): ComponentDetail | null {
         )
       : [],
     usedIn: usedIn.map((c) => kanjiByChar.get(c)!),
+    uses: (componentUses.get(character) ?? []).map((u) => {
+      const k = kanjiByChar.get(u.kanji)!;
+      return {
+        character: k.character,
+        meaning: k.meanings[0] ?? "",
+        jlpt: k.jlpt,
+        strokes: k.strokes,
+        frequency: k.frequency,
+        position: u.position,
+        partners: u.partners,
+      };
+    }),
   };
 }
 

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { KanjiTile } from "@/components/KanjiTile";
+import { ComponentKanjiList } from "@/components/ComponentKanjiList";
 import { componentIndex, getComponentDetail } from "@/lib/data";
 import { componentHref, decodeParam, kanjiHref } from "@/lib/format";
 
@@ -87,14 +87,7 @@ export default async function ComponentPage({ params }: PageProps<"/component/[c
         <h2 id="used-in" className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">
           Kanji containing <span lang="ja">{character}</span>
         </h2>
-        <p className="mb-4 text-xs text-muted">Most frequent first.</p>
-        <ul className="flex flex-wrap gap-2">
-          {usedIn.map((k) => (
-            <li key={k.character}>
-              <KanjiTile kanji={k} />
-            </li>
-          ))}
-        </ul>
+        <ComponentKanjiList character={character} uses={detail.uses} />
       </section>
     </main>
   );
