@@ -58,7 +58,12 @@ The MVP is complete. Next up is the first item below.
 
 Order is provisional; revisit after Day 7.
 
-- [ ] Component explorer (search components, group and filter kanji by them)
+- [x] **Day 8 — Component explorer** (2026-10-25)
+      `/components` lists all 1,045 components by use, searchable by
+      character (radical variants match), English name, or radical number.
+      Component pages filter their kanji by JLPT level, stroke count,
+      frequency, the component's position (left, top, enclosure…), and the
+      components it's often combined with.
 - [ ] Kanji comparison (shared/different components, readings, meanings)
 - [ ] Similar-looking kanji and explanations of their differences
 - [ ] Spaced-repetition scheduling; easy / difficult / forgotten marks
