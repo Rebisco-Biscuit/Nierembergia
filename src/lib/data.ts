@@ -5,6 +5,7 @@ import strokesJson from "@/data/strokes.json";
 import vocabJson from "@/data/vocab.json";
 import componentsJson from "@/data/components.json";
 import { buildCatalog, buildComponentUses, type ComponentUseItem } from "./component-explorer";
+import { similarKanji } from "./similarity";
 import { buildComponentIndex, relatedByComponent } from "./component-index";
 import { decompose, meaningOf, radicalNumberOf, type DecomposedComponent } from "./decomposition";
 import type { ComponentNode } from "./kanjivg";
@@ -106,10 +107,15 @@ export interface KanjiDetail {
   related: { component: string; name: string | null; kanji: Kanji[]; total: number }[];
   /** Kanji that contain this kanji as a component (first few), and how many in all. */
   usedIn: { kanji: Kanji[]; total: number };
+  /** Kanji that look alike, by shared components and stroke count (computed). */
+  similar: Kanji[];
 }
 
 const RELATED_PER_COMPONENT = 12;
 const USED_IN_SHOWN = 24;
+const SIMILAR_SHOWN = 8;
+const frequencyRank = new Map(dataset.kanji.map((k, i) => [k.character, i]));
+const strokesOf = (char: string) => kanjiByChar.get(char)?.strokes ?? 0;
 
 export function getKanjiDetail(character: string): KanjiDetail | null {
   const kanji = kanjiByChar.get(character);
@@ -134,6 +140,7 @@ export function getKanjiDetail(character: string): KanjiDetail | null {
       total: g.total,
     }));
   const containing = componentIndex.get(character) ?? [];
+  const similar = similarKanji(character, components, strokesOf, componentIndex, frequencyRank, SIMILAR_SHOWN);
 
   return {
     kanji,
@@ -143,6 +150,7 @@ export function getKanjiDetail(character: string): KanjiDetail | null {
     traditionalForms: dataset.kanji.filter((k) => k.variantOf === character),
     components: decomposed,
     related,
+    similar: similar.map((s) => kanjiByChar.get(s.character)!),
     usedIn: {
       kanji: containing.slice(0, USED_IN_SHOWN).map((c) => kanjiByChar.get(c)!),
       total: containing.length,
