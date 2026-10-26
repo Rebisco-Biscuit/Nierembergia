@@ -7,6 +7,7 @@ import { KanjiProgress } from "@/components/KanjiProgress";
 import { LibraryControls } from "@/components/LibraryControls";
 import { StrokeAnimation, StrokeFrames } from "@/components/StrokeOrder";
 import { dataset, getKanjiDetail, type KanjiDetail } from "@/lib/data";
+import { compareHref } from "@/lib/compare";
 import { componentHref, decodeParam, gradeLabel, kanjiHref, parseKunReading } from "@/lib/format";
 
 export function generateStaticParams() {
@@ -236,11 +237,25 @@ function Vocabulary({ detail }: { detail: KanjiDetail }) {
 }
 
 function RelatedKanji({ detail }: { detail: KanjiDetail }) {
-  const { related, usedIn, kanji } = detail;
-  if (related.length === 0 && usedIn.total === 0) return null;
+  const { related, usedIn, kanji, similar } = detail;
+  if (related.length === 0 && usedIn.total === 0 && similar.length === 0) return null;
 
   return (
     <div className="mt-10 space-y-10">
+      {similar.length > 0 && (
+        <Section title="Look-alikes">
+          <p className="mb-2 flex flex-wrap items-baseline gap-x-3 text-sm text-muted">
+            <span>Kanji built from mostly the same parts, with a similar stroke count. Computed, not curated.</span>
+            <Link
+              href={compareHref([kanji.character, ...similar.slice(0, 3).map((k) => k.character)])}
+              className="text-accent hover:underline"
+            >
+              Compare →
+            </Link>
+          </p>
+          <TileList kanji={similar} />
+        </Section>
+      )}
       {related.length > 0 && (
         <Section title="Shares components">
           <div className="space-y-6">

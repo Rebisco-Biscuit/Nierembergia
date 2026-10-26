@@ -64,8 +64,12 @@ Order is provisional; revisit after Day 7.
       Component pages filter their kanji by JLPT level, stroke count,
       frequency, the component's position (left, top, enclosure…), and the
       components it's often combined with.
-- [ ] Kanji comparison (shared/different components, readings, meanings)
-- [ ] Similar-looking kanji and explanations of their differences
+- [x] **Day 9 — Kanji comparison and look-alikes** (2026-10-26)
+      Look-alikes computed from shared KanjiVG components (top-level parts
+      weighted double) and stroke count, shown on every detail page and
+      labelled as computed. `/compare?k=…` puts 2–4 kanji side by side:
+      shared parts, the parts that tell each apart (highlighted in its
+      glyph), shared readings, meanings, readings, and example words.
 - [ ] Spaced-repetition scheduling; easy / difficult / forgotten marks
 - [ ] Expanded quiz types (missing component, reconstruct, similar kanji)
 - [ ] Semantic and phonetic component roles, with uncertainty marked
