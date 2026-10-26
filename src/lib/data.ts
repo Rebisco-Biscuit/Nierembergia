@@ -117,6 +117,9 @@ const SIMILAR_SHOWN = 8;
 const frequencyRank = new Map(dataset.kanji.map((k, i) => [k.character, i]));
 const strokesOf = (char: string) => kanjiByChar.get(char)?.strokes ?? 0;
 
+/** A kanji's KanjiVG component tree, if KanjiVG has one. */
+export const getKanjiTree = (character: string): ComponentNode | null => components[character] ?? null;
+
 export function getKanjiDetail(character: string): KanjiDetail | null {
   const kanji = kanjiByChar.get(character);
   if (!kanji) return null;

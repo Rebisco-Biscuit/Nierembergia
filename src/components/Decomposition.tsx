@@ -10,7 +10,7 @@ const MAX_DEPTH = 3;
 const colorFor = (index: number) => COMPONENT_COLORS[index % COMPONENT_COLORS.length];
 
 /** The kanji with `highlight` strokes in colour and the rest faint. */
-function Glyph({
+export function Glyph({
   strokes,
   highlight,
   color = "var(--accent)",
