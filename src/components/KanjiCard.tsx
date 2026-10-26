@@ -45,7 +45,9 @@ export function KanjiCard({ kanji }: { kanji: Kanji }) {
           {grade && grade <= 6 && <Badge>Grade {grade}</Badge>}
           {grade === 8 && <Badge>Jōyō</Badge>}
           {grade && grade >= 9 && <Badge>Jinmeiyō</Badge>}
-          <Badge>{strokes} strokes</Badge>
+          <Badge>
+            {strokes} stroke{strokes === 1 ? "" : "s"}
+          </Badge>
         </ul>
       </div>
     </Link>
