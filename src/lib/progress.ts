@@ -107,6 +107,8 @@ export interface ProgressSummary {
   weak: string[];
   /** Due for review now, most overdue first. */
   due: string[];
+  /** When the next not-yet-due review comes up, or null if none is scheduled. */
+  nextDue: number | null;
   sessions: number;
 }
 
@@ -128,6 +130,10 @@ export function summarize(progress: Progress, now: number): ProgressSummary {
       .filter(([, s]) => isDue(s.srs, now))
       .sort(([, a], [, b]) => a.srs!.due - b.srs!.due)
       .map(([k]) => k),
+    nextDue: entries.reduce<number | null>((min, [, s]) => {
+      if (!s.srs || s.srs.due <= now) return min;
+      return min === null ? s.srs.due : Math.min(min, s.srs.due);
+    }, null),
     sessions: progress.sessions.length,
   };
 }

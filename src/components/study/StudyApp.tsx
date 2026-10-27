@@ -49,14 +49,20 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
     );
   }
 
-  const weak = summarize(progress, now()).weak;
+  const { weak, due, nextDue } = summarize(progress, now());
+  const lists = { weak, due };
   const byChar = new Map(all.map((k) => [k.character, k]));
 
   const sources: { source: DeckSource; label: string; count: number }[] = [
     {
+      source: { kind: "due" },
+      label: "Due for review",
+      count: deckFromSource({ kind: "due" }, library, all, lists).length,
+    },
+    {
       source: { kind: "weak" },
       label: "Weak kanji",
-      count: deckFromSource({ kind: "weak" }, library, all, weak).length,
+      count: deckFromSource({ kind: "weak" }, library, all, lists).length,
     },
     { source: { kind: "bookmarks" }, label: "Bookmarks", count: library.bookmarks.length },
     ...library.collections.map((c) => ({
@@ -92,7 +98,7 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
     setError(null);
   };
 
-  const deck = () => deckFromSource(selected.source, library, all, weak);
+  const deck = () => deckFromSource(selected.source, library, all, lists);
   const exit = () => setSession(null);
 
   if (session) {
@@ -119,12 +125,7 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
           ← {selected.label}
         </button>
         {session.mode === "flashcards" ? (
-          <Flashcards
-            key={session.key}
-            cards={session.cards}
-            scheduleOf={(c) => progress.kanji[c]?.srs}
-            {...common}
-          />
+          <Flashcards key={session.key} cards={session.cards} scheduleOf={(c) => progress.kanji[c]?.srs} {...common} />
         ) : (
           <Quiz key={session.key} questions={session.questions} {...common} />
         )}
@@ -139,9 +140,17 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
         byChar={byChar}
         onStudyWeak={() => {
           setSource({ kind: "weak" });
-          start(deckFromSource({ kind: "weak" }, library, all, weak));
+          start(deckFromSource({ kind: "weak" }, library, all, lists));
         }}
         onReset={() => updateProgress(() => emptyProgress())}
+        dueCount={due.length}
+        nextDue={nextDue}
+        onReviewDue={() => {
+          setSource({ kind: "due" });
+          // Reviews go through flashcards so each one can be graded.
+          setMode("flashcards");
+          start(deckFromSource({ kind: "due" }, library, all, lists), "flashcards");
+        }}
       />
       <form
         className="space-y-8"

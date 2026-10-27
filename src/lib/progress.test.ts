@@ -155,6 +155,8 @@ describe("scheduling", () => {
     p = recordAnswer(p, "火", true, at(21)); // due on the 22nd
     p = recordAnswer(p, "木", true, at(25)); // not due yet
     expect(summarize(p, at(23)).due).toEqual(["水", "火"]);
+    expect(summarize(p, at(23)).nextDue).toBe(p.kanji["木"].srs!.due);
+    expect(summarize(emptyProgress(), at(23)).nextDue).toBeNull();
   });
 
   it("treats older progress without a schedule as not due", () => {

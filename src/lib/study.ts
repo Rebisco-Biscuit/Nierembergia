@@ -18,22 +18,30 @@ export type DeckSource =
   | { kind: "collection"; id: string }
   | { kind: "jlpt"; level: JlptLevel }
   /** Kanji missed the last time they came up (see progress.ts). */
-  | { kind: "weak" };
+  | { kind: "weak" }
+  /** Kanji whose spaced-repetition review is due (see srs.ts). */
+  | { kind: "due" };
+
+/** Deck lists that come from study progress rather than the library. */
+export interface ProgressLists {
+  weak?: string[];
+  due?: string[];
+}
 
 /** The kanji a deck source refers to, skipping any not in `all`. */
 export function deckFromSource(
   source: DeckSource,
   library: Library,
   all: StudyKanji[],
-  weak: string[] = [],
+  lists: ProgressLists = {},
 ): StudyKanji[] {
   if (source.kind === "jlpt") return all.filter((k) => k.jlpt === source.level);
   const byChar = new Map(all.map((k) => [k.character, k]));
   const chars =
     source.kind === "bookmarks"
       ? library.bookmarks
-      : source.kind === "weak"
-        ? weak
+      : source.kind === "weak" || source.kind === "due"
+        ? (lists[source.kind] ?? [])
         : (library.collections.find((c) => c.id === source.id)?.kanji ?? []);
   return chars.flatMap((c) => byChar.get(c) ?? []);
 }

@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { KanjiTile } from "@/components/KanjiTile";
 import { MASTERED_STREAK, summarize, type Progress } from "@/lib/progress";
+import { dueLabel } from "@/lib/srs";
 import type { StudyKanji } from "@/lib/study";
 
 const WEAK_SHOWN = 12;
@@ -17,11 +18,17 @@ export function ProgressPanel({
   byChar,
   onStudyWeak,
   onReset,
+  dueCount,
+  nextDue,
+  onReviewDue,
 }: {
   progress: Progress;
   byChar: Map<string, StudyKanji>;
   onStudyWeak: () => void;
   onReset: () => void;
+  dueCount: number;
+  nextDue: number | null;
+  onReviewDue: () => void;
 }) {
   const [confirmReset, setConfirmReset] = useState(false);
   const summary = summarize(progress, now());
@@ -71,11 +78,32 @@ export function ProgressPanel({
             </button>
           </span>
         ) : (
-          <button type="button" onClick={() => setConfirmReset(true)} className="text-sm text-muted hover:text-foreground">
+          <button
+            type="button"
+            onClick={() => setConfirmReset(true)}
+            className="text-sm text-muted hover:text-foreground"
+          >
             Reset
           </button>
         )}
       </div>
+
+      {dueCount > 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3 rounded-xl bg-accent-soft px-4 py-3">
+          <p>
+            <strong className="text-accent">{dueCount}</strong> kanji due for review
+          </p>
+          <button
+            type="button"
+            onClick={onReviewDue}
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-medium text-accent-foreground"
+          >
+            Review now
+          </button>
+        </div>
+      ) : (
+        nextDue !== null && <p className="text-sm text-muted">Nothing due. Next review {dueLabel(nextDue, now())}.</p>
+      )}
 
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map(([label, value, hint]) => (
@@ -120,7 +148,8 @@ export function ProgressPanel({
                   </span>
                 </span>
                 <span className="tabular-nums">
-                  {s.correct}/{s.total} <span className="text-muted">({formatPct(s.total ? s.correct / s.total : null)})</span>
+                  {s.correct}/{s.total}{" "}
+                  <span className="text-muted">({formatPct(s.total ? s.correct / s.total : null)})</span>
                 </span>
               </li>
             ))}
@@ -130,4 +159,3 @@ export function ProgressPanel({
     </section>
   );
 }
-
