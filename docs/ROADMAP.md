@@ -70,7 +70,13 @@ Order is provisional; revisit after Day 7.
       labelled as computed. `/compare?k=…` puts 2–4 kanji side by side:
       shared parts, the parts that tell each apart (highlighted in its
       glyph), shared readings, meanings, readings, and example words.
-- [ ] Spaced-repetition scheduling; easy / difficult / forgotten marks
+- [x] **Day 10 — Spaced repetition** (2026-10-27)
+      A simplified SM-2 schedule per kanji. Flashcards are graded Forgot /
+      Hard / Good / Easy (keys 1–4), each button previewing when the card
+      returns; quiz answers count as Good or Forgot. `/study` has a Due for
+      review deck and banner, and says when the next review is. Detail pages
+      show the next review and offer Easy / Difficult / Forgotten marks.
+      Progress saved before scheduling still loads.
 - [ ] Expanded quiz types (missing component, reconstruct, similar kanji)
 - [ ] Semantic and phonetic component roles, with uncertainty marked
 - [ ] Example sentences

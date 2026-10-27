@@ -54,8 +54,12 @@ describe("deckFromSource", () => {
   });
 
   it("uses the weak list, in its order", () => {
-    expect(deckFromSource({ kind: "weak" }, lib, all, ["木", "水"]).map((k) => k.character)).toEqual(["木", "水"]);
+    expect(deckFromSource({ kind: "weak" }, lib, all, { weak: ["木", "水"] }).map((k) => k.character)).toEqual(["木", "水"]);
     expect(deckFromSource({ kind: "weak" }, lib, all)).toEqual([]);
+  });
+
+  it("uses the due list", () => {
+    expect(deckFromSource({ kind: "due" }, lib, all, { due: ["火"], weak: ["木"] }).map((k) => k.character)).toEqual(["火"]);
   });
 
   it("skips characters missing from the dataset", () => {
