@@ -19,9 +19,9 @@ describe("recordAnswer", () => {
     let p = emptyProgress();
     p = recordAnswer(p, "水", true, 1);
     p = recordAnswer(p, "水", true, 2);
-    expect(p.kanji["水"]).toEqual({ seen: 2, correct: 2, streak: 2, lastSeen: 2 });
+    expect(p.kanji["水"]).toMatchObject({ seen: 2, correct: 2, streak: 2, lastSeen: 2 });
     p = recordAnswer(p, "水", false, 3);
-    expect(p.kanji["水"]).toEqual({ seen: 3, correct: 2, streak: 0, lastSeen: 3 });
+    expect(p.kanji["水"]).toMatchObject({ seen: 3, correct: 2, streak: 0, lastSeen: 3 });
   });
 
   it("does not mutate the previous state", () => {
@@ -133,5 +133,49 @@ describe("parseProgress", () => {
     );
     expect(Object.keys(parsed.kanji)).toEqual(["水"]);
     expect(parsed.sessions).toEqual([{ at: 1, mode: "quiz", total: 5, correct: 3 }]);
+  });
+});
+
+describe("scheduling", () => {
+  it("schedules each answer, defaulting to good or forgot", () => {
+    let p = recordAnswer(emptyProgress(), "水", true, at(22));
+    expect(p.kanji["水"].srs?.interval).toBe(1);
+    p = recordAnswer(p, "火", false, at(22));
+    expect(p.kanji["火"].srs?.interval).toBe(0);
+  });
+
+  it("uses an explicit grade, still counting hard and easy as correct", () => {
+    const p = recordAnswer(emptyProgress(), "水", true, at(22), "easy");
+    expect(p.kanji["水"].srs?.interval).toBe(4);
+    expect(p.kanji["水"].correct).toBe(1);
+  });
+
+  it("lists due kanji, most overdue first", () => {
+    let p = recordAnswer(emptyProgress(), "水", true, at(20)); // due on the 21st
+    p = recordAnswer(p, "火", true, at(21)); // due on the 22nd
+    p = recordAnswer(p, "木", true, at(25)); // not due yet
+    expect(summarize(p, at(23)).due).toEqual(["水", "火"]);
+  });
+
+  it("treats older progress without a schedule as not due", () => {
+    const old = parseProgress(JSON.stringify({ version: 1, kanji: { 水: { seen: 1, correct: 1, streak: 1, lastSeen: 1 } }, sessions: [] }));
+    expect(old.kanji["水"].srs).toBeUndefined();
+    expect(summarize(old, at(23)).due).toEqual([]);
+  });
+
+  it("keeps a valid stored schedule and drops a malformed one", () => {
+    const parsed = parseProgress(
+      JSON.stringify({
+        version: 1,
+        kanji: {
+          水: { seen: 1, correct: 1, streak: 1, lastSeen: 1, srs: { interval: 3, ease: 2.5, due: 5 } },
+          火: { seen: 1, correct: 1, streak: 1, lastSeen: 1, srs: { interval: -1, ease: 2.5, due: 5 } },
+        },
+        sessions: [],
+      }),
+    );
+    expect(parsed.kanji["水"].srs).toEqual({ interval: 3, ease: 2.5, due: 5 });
+    expect(parsed.kanji["火"]).toBeDefined();
+    expect(parsed.kanji["火"].srs).toBeUndefined();
   });
 });

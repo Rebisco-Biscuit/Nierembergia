@@ -1,6 +1,8 @@
 // Study progress: per-kanji answer history and a log of finished sessions.
 // Pure functions; persistence lives in library-store.ts.
 
+import { isDue, schedule, type Grade, type SrsState } from "./srs";
+
 export const PROGRESS_VERSION = 1;
 /** Correct answers in a row that count a kanji as mastered. */
 export const MASTERED_STREAK = 3;
@@ -12,6 +14,8 @@ export interface KanjiStats {
   /** Correct answers in a row, ending with the latest one (0 if the latest was wrong). */
   streak: number;
   lastSeen: number;
+  /** Spaced-repetition schedule; absent for progress saved before scheduling existed. */
+  srs?: SrsState;
 }
 
 export type StudyMode = "flashcards" | "quiz";
@@ -32,8 +36,19 @@ export interface Progress {
 
 export const emptyProgress = (): Progress => ({ version: PROGRESS_VERSION, kanji: {}, sessions: [] });
 
-export function recordAnswer(progress: Progress, kanji: string, correct: boolean, now: number): Progress {
-  const prev = progress.kanji[kanji] ?? { seen: 0, correct: 0, streak: 0, lastSeen: 0 };
+/**
+ * Records one answer. `grade` refines it for scheduling (hard and easy are
+ * still correct); without one, a right answer counts as "good" and a wrong
+ * one as "forgot".
+ */
+export function recordAnswer(
+  progress: Progress,
+  kanji: string,
+  correct: boolean,
+  now: number,
+  grade: Grade = correct ? "good" : "forgot",
+): Progress {
+  const prev: KanjiStats = progress.kanji[kanji] ?? { seen: 0, correct: 0, streak: 0, lastSeen: 0 };
   return {
     ...progress,
     kanji: {
@@ -43,6 +58,7 @@ export function recordAnswer(progress: Progress, kanji: string, correct: boolean
         correct: prev.correct + (correct ? 1 : 0),
         streak: correct ? prev.streak + 1 : 0,
         lastSeen: now,
+        srs: schedule(prev.srs, grade, now),
       },
     },
   };
@@ -89,6 +105,8 @@ export interface ProgressSummary {
   dayStreak: number;
   /** Missed last time: lowest accuracy first, then most recently seen. */
   weak: string[];
+  /** Due for review now, most overdue first. */
+  due: string[];
   sessions: number;
 }
 
@@ -106,11 +124,22 @@ export function summarize(progress: Progress, now: number): ProgressSummary {
       .filter(([, s]) => isWeak(s))
       .sort(([, a], [, b]) => accuracyOf(a) - accuracyOf(b) || b.lastSeen - a.lastSeen)
       .map(([k]) => k),
+    due: entries
+      .filter(([, s]) => isDue(s.srs, now))
+      .sort(([, a], [, b]) => a.srs!.due - b.srs!.due)
+      .map(([k]) => k),
     sessions: progress.sessions.length,
   };
 }
 
 const isCount = (v: unknown): v is number => typeof v === "number" && Number.isInteger(v) && v >= 0;
+
+function parseSrs(value: unknown): SrsState | null {
+  if (typeof value !== "object" || value === null) return null;
+  const { interval, ease, due } = value as Record<string, unknown>;
+  if (!isCount(interval) || typeof ease !== "number" || ease < 1 || typeof due !== "number") return null;
+  return { interval, ease, due };
+}
 
 /** Reads stored progress defensively; malformed entries are dropped. */
 export function parseProgress(raw: string | null): Progress {
@@ -132,6 +161,8 @@ export function parseProgress(raw: string | null): Progress {
       if (!s || !isCount(s.seen) || !isCount(s.correct) || !isCount(s.streak) || typeof s.lastSeen !== "number") continue;
       if (s.correct > s.seen || s.streak > s.correct) continue;
       kanji[char] = { seen: s.seen, correct: s.correct, streak: s.streak, lastSeen: s.lastSeen };
+      const srs = parseSrs(s.srs);
+      if (srs) kanji[char].srs = srs;
     }
   }
 
