@@ -6,6 +6,7 @@ import { seededRandom, shuffle } from "@/lib/random";
 import { QUESTION_KINDS, deckFromSource, makeQuiz, type DeckSource, type Question, type StudyKanji } from "@/lib/study";
 import type { JlptLevel } from "@/lib/types";
 import { emptyProgress, recordAnswer, recordSession, summarize } from "@/lib/progress";
+import type { Grade } from "@/lib/srs";
 import { useHydrated, useLibrary, useProgress } from "../useLibrary";
 import { Flashcards } from "./Flashcards";
 import { ProgressPanel } from "./ProgressPanel";
@@ -97,8 +98,8 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
   if (session) {
     const studyMode = session.mode;
     const common = {
-      onAnswer: (k: StudyKanji, correct: boolean) =>
-        updateProgress((p) => recordAnswer(p, k.character, correct, now())),
+      onAnswer: (k: StudyKanji, correct: boolean, grade?: Grade) =>
+        updateProgress((p) => recordAnswer(p, k.character, correct, now(), grade)),
       onFinish: (results: SessionResult[]) =>
         updateProgress((p) =>
           recordSession(p, {
@@ -118,7 +119,12 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
           ← {selected.label}
         </button>
         {session.mode === "flashcards" ? (
-          <Flashcards key={session.key} cards={session.cards} {...common} />
+          <Flashcards
+            key={session.key}
+            cards={session.cards}
+            scheduleOf={(c) => progress.kanji[c]?.srs}
+            {...common}
+          />
         ) : (
           <Quiz key={session.key} questions={session.questions} {...common} />
         )}

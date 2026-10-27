@@ -3,12 +3,23 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { kanjiHref } from "@/lib/format";
+import { GRADES, dueLabel, schedule, type Grade, type SrsState } from "@/lib/srs";
 import { displayReading, type StudyKanji } from "@/lib/study";
 import { SessionProgress, SessionSummary, type SessionResult } from "./SessionSummary";
 
+const GRADE_LABELS: Record<Grade, string> = { forgot: "Forgot", hard: "Hard", good: "Good", easy: "Easy" };
+const GRADE_STYLES: Record<Grade, string> = {
+  forgot: "border-danger bg-danger-soft text-danger",
+  hard: "border-border bg-surface",
+  good: "border-success bg-success-soft text-success",
+  easy: "border-accent bg-accent-soft text-accent",
+};
+// Only read in event handlers and after reveal, never during the server render.
+const now = () => Date.now();
+
 /**
  * Self-graded flashcards: recall the kanji's meaning and readings, reveal,
- * then say whether you knew it.
+ * then grade how well you knew it. The grade schedules the next review.
  */
 export function Flashcards({
   cards,
@@ -17,13 +28,16 @@ export function Flashcards({
   onRestart,
   onRetry,
   onExit,
+  scheduleOf,
 }: {
   cards: StudyKanji[];
-  onAnswer?: (kanji: StudyKanji, correct: boolean) => void;
+  onAnswer?: (kanji: StudyKanji, correct: boolean, grade: Grade) => void;
   onFinish?: (results: SessionResult[]) => void;
   onRestart: () => void;
   onRetry: (cards: StudyKanji[]) => void;
   onExit: () => void;
+  /** The kanji's current schedule, to preview when each grade would bring it back. */
+  scheduleOf?: (character: string) => SrsState | undefined;
 }) {
   const [index, setIndex] = useState(0);
   const [revealed, setRevealed] = useState(false);
@@ -31,11 +45,12 @@ export function Flashcards({
   const card = cards[index];
   const done = index >= cards.length;
 
-  const grade = (correct: boolean) => {
+  const grade = (g: Grade) => {
     if (!card || !revealed) return;
+    const correct = g !== "forgot";
     const next = [...results, { kanji: card, correct }];
     setResults(next);
-    onAnswer?.(card, correct);
+    onAnswer?.(card, correct, g);
     setRevealed(false);
     setIndex(index + 1);
     if (index + 1 >= cards.length) onFinish?.(next);
@@ -48,8 +63,7 @@ export function Flashcards({
       if (!revealed && (e.key === " " || e.key === "Enter") && !(e.target instanceof HTMLButtonElement)) {
         e.preventDefault();
         setRevealed(true);
-      } else if (revealed && (e.key === "1" || e.key === "ArrowLeft")) grade(false);
-      else if (revealed && (e.key === "2" || e.key === "ArrowRight")) grade(true);
+      } else if (revealed && ["1", "2", "3", "4"].includes(e.key)) grade(GRADES[Number(e.key) - 1]);
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
@@ -85,13 +99,24 @@ export function Flashcards({
         )}
       </div>
       {revealed ? (
-        <div className="grid grid-cols-2 gap-2">
-          <button type="button" onClick={() => grade(false)} className="rounded-lg border border-danger bg-danger-soft px-4 py-3 font-medium text-danger">
-            Didn&apos;t know <kbd className="ml-1 text-xs opacity-70">1</kbd>
-          </button>
-          <button type="button" onClick={() => grade(true)} className="rounded-lg border border-success bg-success-soft px-4 py-3 font-medium text-success">
-            Knew it <kbd className="ml-1 text-xs opacity-70">2</kbd>
-          </button>
+        <div className="grid grid-cols-4 gap-2">
+          {GRADES.map((g, i) => {
+            const t = now();
+            const when = dueLabel(schedule(scheduleOf?.(card.character), g, t).due, t);
+            return (
+              <button
+                key={g}
+                type="button"
+                onClick={() => grade(g)}
+                className={`flex flex-col items-center rounded-lg border px-2 py-2.5 font-medium ${GRADE_STYLES[g]}`}
+              >
+                <span>
+                  {GRADE_LABELS[g]} <kbd className="text-xs opacity-70">{i + 1}</kbd>
+                </span>
+                <span className="text-xs font-normal opacity-80">{when}</span>
+              </button>
+            );
+          })}
         </div>
       ) : (
         <button type="button" onClick={() => setRevealed(true)} className="w-full rounded-lg bg-accent px-4 py-3 font-medium text-accent-foreground">
