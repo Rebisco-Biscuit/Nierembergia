@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { START_EASE, dueLabel, isDue, schedule, type Grade, type SrsState } from "./srs";
 
 const DAY = 24 * 60 * 60 * 1000;
-const T0 = Date.UTC(2026, 9, 25);
+// 08:00 local time, so calendar-day labels are the same in every time zone.
+const T0 = new Date(2026, 9, 25, 8).getTime();
 
 /** Applies grades one review after another, each review happening when it's due. */
 function run(grades: Grade[]): SrsState[] {
@@ -82,5 +83,14 @@ describe("dueLabel", () => {
     expect(dueLabel(T0 + DAY, T0)).toBe("tomorrow");
     expect(dueLabel(T0 + 8 * DAY, T0)).toBe("in 8 days");
     expect(dueLabel(T0 + 90 * DAY, T0)).toBe("in 3 months");
+  });
+
+  it("counts calendar days, not 24-hour periods", () => {
+    // Just under a day away is still tomorrow's date.
+    expect(dueLabel(T0 + DAY - 60_000, T0)).toBe("tomorrow");
+    // 15 hours from 08:00 is 23:00 the same day.
+    expect(dueLabel(T0 + 15 * 60 * 60 * 1000, T0)).toBe("later today");
+    // 17 hours from 08:00 is 01:00 the next day.
+    expect(dueLabel(T0 + 17 * 60 * 60 * 1000, T0)).toBe("tomorrow");
   });
 });

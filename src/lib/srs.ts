@@ -50,13 +50,22 @@ export function schedule(prev: SrsState | undefined, grade: Grade, now: number):
 
 export const isDue = (state: SrsState | undefined, now: number) => state !== undefined && state.due <= now;
 
-/** "now", "in 10 min", "tomorrow", "in 3 days", "in 2 months". */
+/** Whole local calendar days from `now`'s date to `due`'s date. */
+function calendarDays(due: number, now: number): number {
+  const start = (t: number) => {
+    const d = new Date(t);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+  };
+  return Math.round((start(due) - start(now)) / DAY);
+}
+
+/** "now", "in 10 min", "later today", "tomorrow", "in 3 days", "in 2 months" (by calendar day). */
 export function dueLabel(due: number, now: number): string {
   const ms = due - now;
   if (ms <= 0) return "now";
   if (ms < 60 * 60 * 1000) return `in ${Math.max(1, Math.round(ms / 60000))} min`;
-  if (ms < DAY) return "later today";
-  const days = Math.round(ms / DAY);
+  const days = calendarDays(due, now);
+  if (days === 0) return "later today";
   if (days === 1) return "tomorrow";
   if (days < 45) return `in ${days} days`;
   return `in ${Math.round(days / 30)} months`;
