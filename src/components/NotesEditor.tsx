@@ -2,7 +2,7 @@
 
 import { useEffect, useId, useRef, useState } from "react";
 import { MAX_NOTE_LENGTH, setNote, type NoteField } from "@/lib/notes";
-import { useNotes } from "./useLibrary";
+import { useHydrated, useNotes } from "./useLibrary";
 
 const SAVE_DELAY_MS = 500;
 // Only called from timers and event handlers, never during render.
@@ -16,6 +16,9 @@ const FIELDS: { field: NoteField; label: string; hint: string }[] = [
 /** Personal mnemonic and notes for one kanji, saved as you type. */
 export function NotesEditor({ character }: { character: string }) {
   const [notes, update] = useNotes();
+  // Until the browser's saved notes load, the fields would show blank; keep
+  // them disabled so nothing typed in that moment is lost or overwritten.
+  const hydrated = useHydrated();
   const stored = notes.kanji[character];
   // While typing, the draft wins; once saved it's cleared and the stored value shows.
   const [drafts, setDrafts] = useState<Partial<Record<NoteField, string>>>({});
@@ -60,10 +63,11 @@ export function NotesEditor({ character }: { character: string }) {
               value={value}
               onChange={(e) => change(field, e.target.value)}
               onBlur={(e) => drafts[field] !== undefined && save(field, e.target.value)}
+              disabled={!hydrated}
               maxLength={MAX_NOTE_LENGTH}
               rows={field === "mnemonic" ? 2 : 3}
               placeholder={hint}
-              className="w-full resize-y rounded-lg border border-border bg-surface px-3 py-2 text-sm placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
+              className="w-full resize-y rounded-lg disabled:opacity-60 border border-border bg-surface px-3 py-2 text-sm placeholder:text-muted/70 focus:border-accent focus:outline-none focus:ring-2 focus:ring-accent/30"
             />
           </div>
         );
