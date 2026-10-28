@@ -12,8 +12,9 @@ import {
   toggleBookmark,
   type Collection,
 } from "@/lib/library";
+import { notedKanji } from "@/lib/notes";
 import { KanjiTile } from "./KanjiTile";
-import { newCollectionId, useHydrated, useLibrary } from "./useLibrary";
+import { newCollectionId, useHydrated, useLibrary, useNotes } from "./useLibrary";
 
 type Meanings = Record<string, string>;
 
@@ -73,7 +74,50 @@ export function LibraryView({ meanings }: { meanings: Meanings }) {
           </ul>
         )}
       </section>
+
+      <NotesSection meanings={meanings} />
     </div>
+  );
+}
+
+function NotesSection({ meanings }: { meanings: Meanings }) {
+  const [notes] = useNotes();
+  const noted = notedKanji(notes).filter((k) => k in meanings);
+
+  return (
+    <section aria-labelledby="notes-heading">
+      <h2 id="notes-heading" className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">
+        Notes {noted.length > 0 && `(${noted.length})`}
+      </h2>
+      {noted.length === 0 ? (
+        <Empty>No notes yet. Write a mnemonic or note in “Your notes” on any kanji page.</Empty>
+      ) : (
+        <ul className="divide-y divide-border rounded-xl border border-border bg-surface">
+          {noted.map((k) => {
+            const { mnemonic, note } = notes.kanji[k];
+            return (
+              <li key={k} className="flex items-start gap-4 px-4 py-3">
+                <KanjiTile kanji={{ character: k, meanings: meanings[k] ? [meanings[k]] : [] }} />
+                <div className="min-w-0 flex-1 space-y-1 text-sm">
+                  {mnemonic.trim() && (
+                    <p className="line-clamp-2">
+                      <span className="font-medium text-accent">Mnemonic: </span>
+                      {mnemonic}
+                    </p>
+                  )}
+                  {note.trim() && (
+                    <p className="line-clamp-2 text-muted">
+                      <span className="font-medium text-foreground">Note: </span>
+                      {note}
+                    </p>
+                  )}
+                </div>
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </section>
   );
 }
 

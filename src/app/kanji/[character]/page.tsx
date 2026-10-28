@@ -5,6 +5,7 @@ import { Decomposition } from "@/components/Decomposition";
 import { KanjiTile } from "@/components/KanjiTile";
 import { KanjiProgress } from "@/components/KanjiProgress";
 import { LibraryControls } from "@/components/LibraryControls";
+import { NotesEditor } from "@/components/NotesEditor";
 import { StrokeAnimation, StrokeFrames } from "@/components/StrokeOrder";
 import { dataset, getKanjiDetail, type KanjiDetail } from "@/lib/data";
 import { compareHref } from "@/lib/compare";
@@ -51,6 +52,9 @@ export default async function KanjiPage({ params }: PageProps<"/kanji/[character
         <div className="space-y-10">
           <Readings detail={detail} />
           <Vocabulary detail={detail} />
+          <Section title="Your notes">
+            <NotesEditor character={kanji.character} />
+          </Section>
         </div>
 
         <Section title="Stroke order">

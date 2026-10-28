@@ -1,8 +1,10 @@
 import { emptyLibrary, parseLibrary, type Library } from "./library";
+import { emptyNotes, parseNotes, type Notes } from "./notes";
 import { emptyProgress, parseProgress, type Progress } from "./progress";
 
 export const STORAGE_KEY = "nierembergia:library";
 export const PROGRESS_KEY = "nierembergia:progress";
+export const NOTES_KEY = "nierembergia:notes";
 
 /** The subset of the Web Storage API the store needs. */
 export interface StorageLike {
@@ -22,6 +24,7 @@ export interface JsonStore<T> {
 
 export type LibraryStore = JsonStore<Library>;
 export type ProgressStore = JsonStore<Progress>;
+export type NotesStore = JsonStore<Notes>;
 
 /**
  * A small external store for useSyncExternalStore, holding one JSON value
@@ -93,3 +96,6 @@ export const createLibraryStore = (storage: StorageLike | null, key = STORAGE_KE
 
 export const createProgressStore = (storage: StorageLike | null, key = PROGRESS_KEY): ProgressStore =>
   createJsonStore(storage, key, parseProgress, emptyProgress);
+
+export const createNotesStore = (storage: StorageLike | null, key = NOTES_KEY): NotesStore =>
+  createJsonStore(storage, key, parseNotes, emptyNotes);

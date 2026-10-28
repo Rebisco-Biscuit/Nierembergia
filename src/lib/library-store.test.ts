@@ -90,6 +90,14 @@ describe("createLibraryStore", () => {
     expect(library.getSnapshot().bookmarks).toEqual([]);
   });
 
+  it("keeps notes under their own key", async () => {
+    const { createNotesStore } = await import("./library-store");
+    const { setNote } = await import("./notes");
+    const storage = memoryStorage();
+    createNotesStore(storage, "notes").update((n) => setNote(n, "休", "mnemonic", "rest", 1));
+    expect(JSON.parse(storage.data.notes).kanji["休"].mnemonic).toBe("rest");
+  });
+
   it("gives the server an empty library", () => {
     const storage = memoryStorage({ lib: JSON.stringify({ version: 1, bookmarks: ["水"], collections: [] }) });
     expect(createLibraryStore(storage, "lib").getServerSnapshot().bookmarks).toEqual([]);

@@ -4,11 +4,14 @@ import { useEffect, useSyncExternalStore } from "react";
 import type { Library } from "@/lib/library";
 import {
   createLibraryStore,
+  createNotesStore,
   createProgressStore,
   type JsonStore,
   type LibraryStore,
+  type NotesStore,
   type ProgressStore,
 } from "@/lib/library-store";
+import type { Notes } from "@/lib/notes";
 import type { Progress } from "@/lib/progress";
 
 function browserStorage() {
@@ -22,8 +25,10 @@ function browserStorage() {
 // One store of each kind per browser tab, shared by every component.
 let libraryStore: LibraryStore | null = null;
 let progressStore: ProgressStore | null = null;
+let notesStore: NotesStore | null = null;
 const getLibraryStore = () => (libraryStore ??= createLibraryStore(browserStorage()));
 const getProgressStore = () => (progressStore ??= createProgressStore(browserStorage()));
+const getNotesStore = () => (notesStore ??= createNotesStore(browserStorage()));
 
 /** Subscribes to a store, re-reading it when another tab writes its key. */
 function useJsonStore<T>(s: JsonStore<T>): [T, JsonStore<T>["update"]] {
@@ -48,6 +53,9 @@ export const useLibrary = (): [Library, LibraryStore["update"]] => useJsonStore(
 
 /** The user's study progress, saved in this browser. Empty on the server. */
 export const useProgress = (): [Progress, ProgressStore["update"]] => useJsonStore(getProgressStore());
+
+/** The user's notes and mnemonics, saved in this browser. Empty on the server. */
+export const useNotes = (): [Notes, NotesStore["update"]] => useJsonStore(getNotesStore());
 
 const noopSubscribe = () => () => {};
 

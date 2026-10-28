@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { kanjiHref } from "@/lib/format";
 import { QUESTION_PROMPTS, readingsOf, type Question, type StudyKanji } from "@/lib/study";
+import { KanjiNoteSnippet } from "../KanjiNoteSnippet";
 import { SessionProgress, SessionSummary, type SessionResult } from "./SessionSummary";
 
 function describe(k: StudyKanji) {
@@ -136,6 +137,7 @@ export function Quiz({
               You picked “{options[chosen].label}”: that&apos;s {describe(options[chosen].kanji)}.
             </p>
           )}
+          <KanjiNoteSnippet character={target.character} />
           <div className="flex items-center justify-between">
             <Link href={kanjiHref(target.character)} target="_blank" className="text-xs text-accent hover:underline">
               Open kanji page ↗
