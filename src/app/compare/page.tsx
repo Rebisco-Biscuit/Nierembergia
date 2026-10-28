@@ -3,6 +3,7 @@ import Link from "next/link";
 import { Suspense } from "react";
 import { CompareForm } from "@/components/CompareForm";
 import { Glyph } from "@/components/Decomposition";
+import { KanjiNoteSnippet } from "@/components/KanjiNoteSnippet";
 import { compareHref, compareKanji, parseCompareParam } from "@/lib/compare";
 import { getKanjiDetail, getKanjiTree, type KanjiDetail } from "@/lib/data";
 import { componentHref, gradeLabel, kanjiHref } from "@/lib/format";
@@ -167,6 +168,7 @@ function CompareColumn({ detail, distinct }: { detail: KanjiDetail; distinct: Se
         <dt className="text-muted">Level</dt>
         <dd>{[kanji.jlpt && `N${kanji.jlpt}`, grade].filter(Boolean).join(" · ") || "—"}</dd>
       </dl>
+      <KanjiNoteSnippet character={kanji.character} />
       {vocabulary.length > 0 && (
         <ul className="space-y-1 border-t border-border pt-3 text-sm">
           {vocabulary.slice(0, 3).map((w) => (
