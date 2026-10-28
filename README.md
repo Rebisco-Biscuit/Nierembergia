@@ -40,9 +40,9 @@ URL, so they can be shared and bookmarked.
 - `/compare?k=待持特`: kanji side by side, with shared and distinguishing parts.
 - `/study`: flashcards and quizzes from your bookmarks, a collection, a JLPT
   level, or the kanji you missed last time, plus your study progress.
-- `/library`: your bookmarks and collections.
+- `/library`: your bookmarks, collections, and notes.
 
-Bookmarks, collections, and study progress are saved in your browser
+Bookmarks, collections, notes, and study progress are saved in your browser
 (localStorage), so they don't follow you to other devices yet.
 
 ## Data

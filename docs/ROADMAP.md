@@ -80,7 +80,11 @@ Order is provisional; revisit after Day 7.
 - [ ] Expanded quiz types (missing component, reconstruct, similar kanji)
 - [ ] Semantic and phonetic component roles, with uncertainty marked
 - [ ] Example sentences
-- [ ] Personal notes and mnemonics
+- [x] **Day 11 — Personal notes and mnemonics** (2026-10-28)
+      A mnemonic and a notes field on every kanji page, saved as you type.
+      They show on the back of flashcards, in quiz explanations, and in each
+      compare column; `/library` lists every kanji you've written about.
+      Saved in localStorage like the rest of your data.
 - [ ] Progress dashboard and charts
 - [ ] Daily targets and filtered study sessions
 - [ ] Export and import of study progress
