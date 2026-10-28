@@ -16,7 +16,7 @@ export default function LibraryPage() {
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-12">
       <h1 className="text-2xl font-semibold tracking-tight">Your library</h1>
       <p className="mt-1 text-sm text-muted">
-        Bookmarks and collections are saved in this browser only.
+        Bookmarks, collections, and notes are saved in this browser only.
       </p>
       <LibraryView meanings={meanings} />
     </main>
