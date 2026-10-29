@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Noto_Sans_JP, Noto_Serif_JP } from "next/font/google";
 import { SiteHeader } from "@/components/SiteHeader";
+import { ROMAJI_INIT_SCRIPT } from "@/lib/romaji-pref";
 import "./globals.css";
 
 // CJK fonts are large; let the browser fetch only the glyphs it needs.
@@ -27,8 +28,14 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
     <html
       lang="en"
+      data-romaji="on"
+      // The init script below may switch data-romaji before React hydrates.
+      suppressHydrationWarning
       className={`${notoSans.variable} ${notoSerif.variable} h-full antialiased`}
     >
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: ROMAJI_INIT_SCRIPT }} />
+      </head>
       <body className="min-h-full flex flex-col font-sans">
         <SiteHeader />
         {children}

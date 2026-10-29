@@ -95,6 +95,11 @@ body {
   }
 }
 
+/* The header's Romaji toggle hides every romaji hint at once. */
+[data-romaji="off"] .romaji {
+  display: none;
+}
+
 /* Japanese text should never be synthesised into faux bold/italic. */
 :lang(ja) {
   font-synthesis: none;

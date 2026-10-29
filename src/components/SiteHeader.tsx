@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { RomajiToggle } from "./RomajiToggle";
 import { useLibrary } from "./useLibrary";
 
 export function SiteHeader() {
@@ -23,6 +24,7 @@ export function SiteHeader() {
           <Link href="/study" className="text-muted hover:text-foreground">
             Study
           </Link>
+          <RomajiToggle />
           <Link href="/library" className="flex items-center gap-1.5 text-muted hover:text-foreground">
             <span aria-hidden>★</span> Library
             {count > 0 && (
