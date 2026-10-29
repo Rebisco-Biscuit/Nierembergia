@@ -27,12 +27,16 @@ The search box accepts:
 | `water` | kanji with that English meaning |
 | `r:85`, `radical 85` | kanji under radical 85 |
 
+Every kana reading in the app also shows romaji (たべる → taberu, た.べる → ta(beru)).
+Turn it off with the **Romaji** switch in the header once you're comfortable with kana;
+the choice is remembered in your browser.
+
 Filter by JLPT level, school grade, and stroke count. Searches are kept in the
 URL, so they can be shared and bookmarked.
 
 ## Pages
 
-- `/kanji/水`: meanings, readings, component breakdown, stroke order,
+- `/kanji/水`: meanings, readings (with romaji), component breakdown, stroke order,
   example words, and related kanji.
 - `/components`: search all components by character, name, or radical number.
 - `/component/氵`: every kanji containing a component, with filters by level,
