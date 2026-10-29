@@ -66,7 +66,7 @@ async function Results({ searchParams }: Pick<PageProps<"/">, "searchParams">) {
       ) : (
         <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
           {shown.map((k) => (
-            <li key={k.character}>
+            <li key={k.character} className="min-w-0">
               <KanjiCard kanji={k} />
             </li>
           ))}

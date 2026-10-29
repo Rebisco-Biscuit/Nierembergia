@@ -29,7 +29,7 @@ export function RomajiToggle() {
       aria-checked={on}
       onClick={() => setRomaji(!on)}
       title={on ? "Hide romaji under kana readings" : "Show romaji under kana readings"}
-      className={`rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
+      className={`whitespace-nowrap rounded-full border px-2.5 py-0.5 text-xs transition-colors ${
         on ? "border-accent bg-accent-soft text-accent" : "border-border text-muted hover:text-foreground"
       }`}
     >

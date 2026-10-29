@@ -14,7 +14,7 @@ export function SiteHeader() {
         <Link href="/" className="font-semibold tracking-tight hover:text-accent">
           Nierembergia
         </Link>
-        <span className="flex items-center gap-4 sm:gap-5">
+        <span className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-x-5">
           <Link href="/components" className="text-muted hover:text-foreground">
             Components
           </Link>
