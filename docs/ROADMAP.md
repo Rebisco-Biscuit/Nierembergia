@@ -87,4 +87,9 @@ Order is provisional; revisit after Day 7.
       Saved in localStorage like the rest of your data.
 - [ ] Progress dashboard and charts
 - [ ] Daily targets and filtered study sessions
-- [ ] Export and import of study progress
+- [x] **Day 12 — Export and import** (2026-10-29)
+      `/library` downloads bookmarks, collections, study progress, and notes
+      as one dated JSON file, and restores from one: a preview shows what the
+      file holds, then Merge (combine, losing nothing) or Replace. Imported
+      data is re-validated with the app's own parsers; bad files get a clear
+      error.
