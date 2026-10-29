@@ -43,7 +43,8 @@ URL, so they can be shared and bookmarked.
 - `/library`: your bookmarks, collections, and notes.
 
 Bookmarks, collections, notes, and study progress are saved in your browser
-(localStorage), so they don't follow you to other devices yet.
+(localStorage). Use "Back up & restore" on `/library` to download them as a file
+or move them to another browser.
 
 ## Data
 
