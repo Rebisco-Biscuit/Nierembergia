@@ -13,6 +13,7 @@ import {
   type Collection,
 } from "@/lib/library";
 import { notedKanji } from "@/lib/notes";
+import { BackupPanel } from "./BackupPanel";
 import { KanjiTile } from "./KanjiTile";
 import { newCollectionId, useHydrated, useLibrary, useNotes } from "./useLibrary";
 
@@ -76,6 +77,8 @@ export function LibraryView({ meanings }: { meanings: Meanings }) {
       </section>
 
       <NotesSection meanings={meanings} />
+
+      <BackupPanel />
     </div>
   );
 }
