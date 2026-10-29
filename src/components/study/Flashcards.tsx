@@ -6,6 +6,7 @@ import { kanjiHref } from "@/lib/format";
 import { GRADES, dueLabel, schedule, type Grade, type SrsState } from "@/lib/srs";
 import { displayReading, type StudyKanji } from "@/lib/study";
 import { KanjiNoteSnippet } from "../KanjiNoteSnippet";
+import { ReadingList } from "../Romaji";
 import { SessionProgress, SessionSummary, type SessionResult } from "./SessionSummary";
 
 const GRADE_LABELS: Record<Grade, string> = { forgot: "Forgot", hard: "Hard", good: "Good", easy: "Easy" };
@@ -87,9 +88,17 @@ export function Flashcards({
           <div className="space-y-2" aria-live="polite">
             <p className="text-lg font-medium">{card.meanings.join(", ") || "No English meaning"}</p>
             <p lang="ja" className="text-muted">
-              {card.onyomi.length > 0 && <span>{card.onyomi.join("、")}</span>}
+              {card.onyomi.length > 0 && (
+                <span>
+                  <ReadingList readings={card.onyomi} />
+                </span>
+              )}
               {card.onyomi.length > 0 && card.kunyomi.length > 0 && <span className="mx-2">·</span>}
-              {card.kunyomi.length > 0 && <span>{card.kunyomi.map(displayReading).join("、")}</span>}
+              {card.kunyomi.length > 0 && (
+                <span>
+                  <ReadingList readings={card.kunyomi} display={displayReading} />
+                </span>
+              )}
             </p>
             <KanjiNoteSnippet character={card.character} className="mx-auto max-w-sm" />
             <Link href={kanjiHref(card.character)} target="_blank" className="inline-block text-xs text-accent hover:underline">

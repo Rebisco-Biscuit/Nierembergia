@@ -11,3 +11,28 @@ export function Romaji({ reading, className = "" }: { reading: string; className
     </span>
   );
 }
+
+/**
+ * Readings in a row, each followed by its romaji: "スイ sui、みず mizu".
+ * `display` formats the kana (e.g. dropping okurigana dots).
+ */
+export function ReadingList({
+  readings,
+  display = (r) => r,
+  separator = "、",
+}: {
+  readings: string[];
+  display?: (reading: string) => string;
+  separator?: string;
+}) {
+  return (
+    <>
+      {readings.map((r, i) => (
+        <span key={r}>
+          {i > 0 && separator}
+          <span lang="ja">{display(r)}</span> <Romaji reading={r} className="text-[0.85em]" />
+        </span>
+      ))}
+    </>
+  );
+}

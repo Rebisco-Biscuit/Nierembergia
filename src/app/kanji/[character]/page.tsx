@@ -6,6 +6,7 @@ import { KanjiTile } from "@/components/KanjiTile";
 import { KanjiProgress } from "@/components/KanjiProgress";
 import { LibraryControls } from "@/components/LibraryControls";
 import { NotesEditor } from "@/components/NotesEditor";
+import { Romaji } from "@/components/Romaji";
 import { StrokeAnimation, StrokeFrames } from "@/components/StrokeOrder";
 import { dataset, getKanjiDetail, type KanjiDetail } from "@/lib/data";
 import { compareHref } from "@/lib/compare";
@@ -171,8 +172,9 @@ function Readings({ detail }: { detail: KanjiDetail }) {
             </dt>
             <dd lang="ja" className="mt-1 flex flex-wrap gap-2 text-xl">
               {onyomi.map((r) => (
-                <span key={r} className="rounded-lg bg-accent-soft px-2.5 py-0.5">
+                <span key={r} className="flex flex-col items-center rounded-lg bg-accent-soft px-2.5 py-0.5">
                   {r}
+                  <Romaji reading={r} className="text-xs" />
                 </span>
               ))}
             </dd>
@@ -188,11 +190,14 @@ function Readings({ detail }: { detail: KanjiDetail }) {
               {kunyomi.map((r) => {
                 const { stem, okurigana, isPrefix, isSuffix } = parseKunReading(r);
                 return (
-                  <span key={r} className="rounded-lg border border-border px-2.5 py-0.5">
-                    {isSuffix && <span className="text-muted">～</span>}
-                    {stem}
-                    {okurigana && <span className="text-muted">{okurigana}</span>}
-                    {isPrefix && <span className="text-muted">～</span>}
+                  <span key={r} className="flex flex-col items-center rounded-lg border border-border px-2.5 py-0.5">
+                    <span>
+                      {isSuffix && <span className="text-muted">～</span>}
+                      {stem}
+                      {okurigana && <span className="text-muted">{okurigana}</span>}
+                      {isPrefix && <span className="text-muted">～</span>}
+                    </span>
+                    <Romaji reading={r} className="text-xs" />
                   </span>
                 );
               })}
@@ -228,8 +233,8 @@ function Vocabulary({ detail }: { detail: KanjiDetail }) {
                   ),
                 )}
               </span>
-              <span lang="ja" className="text-sm text-muted">
-                {w.reading}
+              <span className="text-sm text-muted">
+                <span lang="ja">{w.reading}</span> <Romaji reading={w.reading} />
               </span>
               <span className="basis-full text-sm sm:basis-auto">{w.meanings.join("; ")}</span>
             </li>

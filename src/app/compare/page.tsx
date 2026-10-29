@@ -4,6 +4,7 @@ import { Suspense } from "react";
 import { CompareForm } from "@/components/CompareForm";
 import { Glyph } from "@/components/Decomposition";
 import { KanjiNoteSnippet } from "@/components/KanjiNoteSnippet";
+import { ReadingList, Romaji } from "@/components/Romaji";
 import { compareHref, compareKanji, parseCompareParam } from "@/lib/compare";
 import { getKanjiDetail, getKanjiTree, type KanjiDetail } from "@/lib/data";
 import { componentHref, gradeLabel, kanjiHref } from "@/lib/format";
@@ -112,7 +113,7 @@ async function Results({ searchParams }: Pick<PageProps<"/compare">, "searchPara
         {comparison.sharedReadings.length > 0 && (
           <p>
             <span className="text-muted">Shared readings: </span>
-            <span lang="ja">{comparison.sharedReadings.join("、")}</span>
+            <ReadingList readings={comparison.sharedReadings} />
             {comparison.shared.length > 0 && (
               <span className="text-muted"> (often a sign of a shared sound component)</span>
             )}
@@ -156,9 +157,9 @@ function CompareColumn({ detail, distinct }: { detail: KanjiDetail; distinct: Se
       </div>
       <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-1.5 text-sm">
         <dt className="text-muted">On</dt>
-        <dd lang="ja">{kanji.onyomi.join("、") || "—"}</dd>
+        <dd>{kanji.onyomi.length ? <ReadingList readings={kanji.onyomi} /> : "—"}</dd>
         <dt className="text-muted">Kun</dt>
-        <dd lang="ja">{kanji.kunyomi.map(displayReading).join("、") || "—"}</dd>
+        <dd>{kanji.kunyomi.length ? <ReadingList readings={kanji.kunyomi} display={displayReading} /> : "—"}</dd>
         <dt className="text-muted">Strokes</dt>
         <dd>{kanji.strokes}</dd>
         <dt className="text-muted">Radical</dt>
@@ -176,8 +177,8 @@ function CompareColumn({ detail, distinct }: { detail: KanjiDetail; distinct: Se
               <span lang="ja" className="text-base">
                 {w.word}
               </span>{" "}
-              <span lang="ja" className="text-muted">
-                {w.reading}
+              <span className="text-muted">
+                <span lang="ja">{w.reading}</span> <Romaji reading={w.reading} />
               </span>{" "}
               <span className="text-muted">· {w.meanings[0]}</span>
             </li>
