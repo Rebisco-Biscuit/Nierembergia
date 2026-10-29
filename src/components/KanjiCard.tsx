@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { kanjiHref } from "@/lib/format";
+import { ReadingList } from "./Romaji";
 import type { Kanji } from "@/lib/types";
 
 export function KanjiCard({ kanji }: { kanji: Kanji }) {
@@ -30,13 +31,17 @@ export function KanjiCard({ kanji }: { kanji: Kanji }) {
           {onyomi.length > 0 && (
             <div className="flex gap-2">
               <dt className="sr-only">On&apos;yomi</dt>
-              <dd className="truncate">{onyomi.slice(0, 3).join("、")}</dd>
+              <dd className="min-w-0 truncate">
+                <ReadingList readings={onyomi.slice(0, 3)} />
+              </dd>
             </div>
           )}
           {kunyomi.length > 0 && (
             <div className="flex gap-2">
               <dt className="sr-only">Kun&apos;yomi</dt>
-              <dd className="truncate">{kunyomi.slice(0, 3).join("、")}</dd>
+              <dd className="min-w-0 truncate">
+                <ReadingList readings={kunyomi.slice(0, 3)} />
+              </dd>
             </div>
           )}
         </dl>

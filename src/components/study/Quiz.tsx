@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import { kanjiHref } from "@/lib/format";
 import { QUESTION_PROMPTS, readingsOf, type Question, type StudyKanji } from "@/lib/study";
 import { KanjiNoteSnippet } from "../KanjiNoteSnippet";
+import { ReadingList, Romaji } from "../Romaji";
 import { SessionProgress, SessionSummary, type SessionResult } from "./SessionSummary";
 
 function describe(k: StudyKanji) {
@@ -17,7 +18,7 @@ function describe(k: StudyKanji) {
       means “{k.meanings.join(", ") || "—"}”
       {readings.length > 0 && (
         <>
-          , read <span lang="ja">{readings.join("・")}</span>
+          , read <ReadingList readings={readings} separator="・" />
         </>
       )}
     </>
@@ -120,6 +121,7 @@ export function Quiz({
                 <span lang={kind === "meaning" ? undefined : "ja"} className={kind === "kanji" ? "font-serif text-3xl" : "text-lg"}>
                   {o.label}
                 </span>
+                {kind === "reading" && <Romaji reading={o.label} className="text-sm" />}
                 {answered && isAnswer && <span className="ml-auto text-sm" aria-label="correct answer">✓</span>}
                 {answered && isChosen && !isAnswer && <span className="ml-auto text-sm" aria-label="your answer">✗</span>}
               </button>
