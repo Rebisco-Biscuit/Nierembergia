@@ -42,7 +42,8 @@ URL, so they can be shared and bookmarked.
 - `/component/氵`: every kanji containing a component, with filters by level,
   strokes, frequency, position, and partner component.
 - `/compare?k=待持特`: kanji side by side, with shared and distinguishing parts.
-- `/study`: flashcards and quizzes from your bookmarks, a collection, a JLPT
+- `/study`: flashcards and quizzes (meanings, readings, parts, and look-alikes)
+  from your bookmarks, a collection, a JLPT
   level, or the kanji you missed last time, plus your study progress.
 - `/library`: your bookmarks, collections, and notes.
 

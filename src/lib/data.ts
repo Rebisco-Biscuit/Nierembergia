@@ -6,9 +6,10 @@ import vocabJson from "@/data/vocab.json";
 import componentsJson from "@/data/components.json";
 import { buildCatalog, buildComponentUses, type ComponentUseItem } from "./component-explorer";
 import { similarKanji } from "./similarity";
-import { buildComponentIndex, relatedByComponent } from "./component-index";
+import { buildComponentIndex, componentsOf, relatedByComponent } from "./component-index";
 import { decompose, meaningOf, radicalNumberOf, type DecomposedComponent } from "./decomposition";
 import type { ComponentNode } from "./kanjivg";
+import { toStudyKanji, type StudyKanji } from "./study";
 import type { Dataset, Kanji, Radical } from "./types";
 import type { VocabWord } from "./vocab";
 
@@ -159,4 +160,23 @@ export function getKanjiDetail(character: string): KanjiDetail | null {
       total: containing.length,
     },
   };
+}
+
+const SIMILAR_FOR_STUDY = 4;
+
+/**
+ * Every kanji as sent to the study page, with the parts, components, and
+ * look-alikes that component quiz questions need.
+ */
+export function getStudyKanji(): StudyKanji[] {
+  return dataset.kanji.map((k) => {
+    const tree = components[k.character];
+    return toStudyKanji(k, {
+      parts: (tree?.children ?? []).flatMap((c) => (c.element ? [c.element] : [])),
+      components: tree ? [...componentsOf(tree)] : [],
+      similar: similarKanji(k.character, components, strokesOf, componentIndex, frequencyRank, SIMILAR_FOR_STUDY).map(
+        (s) => s.character,
+      ),
+    });
+  });
 }

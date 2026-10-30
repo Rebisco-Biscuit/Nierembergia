@@ -15,7 +15,7 @@ import {
 } from "./study";
 import type { Kanji } from "./types";
 
-const all = (kanjiJson as Kanji[]).map(toStudyKanji);
+const all = (kanjiJson as Kanji[]).map((k) => toStudyKanji(k));
 const byChar = new Map(all.map((k) => [k.character, k]));
 const get = (c: string) => byChar.get(c)!;
 
@@ -75,6 +75,13 @@ describe("displayReading", () => {
   });
 });
 
+describe("readingsOf", () => {
+  it("drops readings that only differ by okurigana marks", () => {
+    const k: StudyKanji = { character: "成", meanings: [], onyomi: ["セイ"], kunyomi: ["な.す", "なす"], jlpt: null };
+    expect(readingsOf(k)).toEqual(["セイ", "なす"]);
+  });
+});
+
 describe("makeQuestion", () => {
   const n5 = all.filter((k) => k.jlpt === 5);
 
@@ -86,7 +93,7 @@ describe("makeQuestion", () => {
       expect(q.options).toHaveLength(OPTION_COUNT);
       expect(q.options[q.answer].kanji).toBe(target);
       expect(new Set(q.options.map((o) => o.label)).size).toBe(OPTION_COUNT);
-      expect(new Set(q.options.map((o) => o.kanji.character)).size).toBe(OPTION_COUNT);
+      expect(new Set(q.options.map((o) => o.kanji!.character)).size).toBe(OPTION_COUNT);
     }
   });
 
@@ -117,7 +124,7 @@ describe("makeQuestion", () => {
 
   it("prefers distractors from the same JLPT level", () => {
     const q = makeQuestion("meaning", get("水"), all, seededRandom(7))!;
-    expect(q.options.every((o) => o.kanji.jlpt === 5)).toBe(true);
+    expect(q.options.every((o) => o.kanji!.jlpt === 5)).toBe(true);
   });
 
   it("returns null when the target has nothing to ask", () => {

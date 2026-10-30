@@ -3,7 +3,16 @@
 import Link from "next/link";
 import { useState } from "react";
 import { seededRandom, shuffle } from "@/lib/random";
-import { QUESTION_KINDS, deckFromSource, makeQuiz, type DeckSource, type Question, type StudyKanji } from "@/lib/study";
+import {
+  COMPONENT_KINDS,
+  QUESTION_KINDS,
+  deckFromSource,
+  makeQuiz,
+  type DeckSource,
+  type Question,
+  type QuestionKind,
+  type StudyKanji,
+} from "@/lib/study";
 import type { JlptLevel } from "@/lib/types";
 import { emptyProgress, recordAnswer, recordSession, summarize } from "@/lib/progress";
 import type { Grade } from "@/lib/srs";
@@ -26,6 +35,13 @@ const now = () => Date.now();
 let sessionCount = 0;
 const nextSessionKey = () => ++sessionCount;
 
+type QuestionSet = "basic" | "parts" | "mixed";
+const QUESTION_SETS: Record<QuestionSet, { label: string; kinds: QuestionKind[] }> = {
+  basic: { label: "Meanings & readings", kinds: QUESTION_KINDS },
+  parts: { label: "Parts & look-alikes", kinds: COMPONENT_KINDS },
+  mixed: { label: "Mixed", kinds: [...QUESTION_KINDS, ...COMPONENT_KINDS] },
+};
+
 const sourceKey = (s: DeckSource) =>
   s.kind === "jlpt" ? `jlpt:${s.level}` : s.kind === "collection" ? `c:${s.id}` : s.kind;
 
@@ -36,6 +52,7 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
   const [source, setSource] = useState<DeckSource>({ kind: "jlpt", level: 5 });
   const [mode, setMode] = useState<Mode>("flashcards");
   const [length, setLength] = useState<number>(10);
+  const [questionSet, setQuestionSet] = useState<QuestionSet>("basic");
   const [session, setSession] = useState<Session | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -89,7 +106,7 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
       setError(null);
       return;
     }
-    const questions = makeQuiz(deck, all, Math.min(length, deck.length), QUESTION_KINDS, rand);
+    const questions = makeQuiz(deck, all, Math.min(length, deck.length), QUESTION_SETS[questionSet].kinds, rand);
     if (questions.length === 0) {
       setError("Couldn't build quiz questions for this deck. Try flashcards, or a bigger deck.");
       return;
@@ -222,6 +239,28 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
               ))}
             </div>
           </fieldset>
+          {mode === "quiz" && (
+            <fieldset>
+              <legend className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">Questions</legend>
+              <div className="flex flex-wrap gap-2">
+                {(Object.keys(QUESTION_SETS) as QuestionSet[]).map((set) => (
+                  <label
+                    key={set}
+                    className={`cursor-pointer rounded-lg border px-4 py-2 text-sm ${questionSet === set ? "border-accent bg-accent-soft" : "border-border"}`}
+                  >
+                    <input
+                      type="radio"
+                      name="question-set"
+                      className="sr-only"
+                      checked={questionSet === set}
+                      onChange={() => setQuestionSet(set)}
+                    />
+                    {QUESTION_SETS[set].label}
+                  </label>
+                ))}
+              </div>
+            </fieldset>
+          )}
           <fieldset>
             <legend className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">Length</legend>
             <div className="flex gap-2">
