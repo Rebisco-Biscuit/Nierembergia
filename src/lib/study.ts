@@ -97,7 +97,8 @@ export interface Question {
 /** A reading as learners write it: "た.べる" → "たべる", "-び" → "び". */
 export const displayReading = (r: string) => r.replace(/[.-]/g, "");
 
-export const readingsOf = (k: StudyKanji) => [...k.onyomi, ...k.kunyomi].map(displayReading);
+/** Distinct readings as learners write them (な.す and なす are the same word). */
+export const readingsOf = (k: StudyKanji) => [...new Set([...k.onyomi, ...k.kunyomi].map(displayReading))];
 
 /** The label a kanji contributes as an option for this kind of question. */
 function labelFor(kind: BasicKind, k: StudyKanji): string | null {

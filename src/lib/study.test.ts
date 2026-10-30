@@ -75,6 +75,13 @@ describe("displayReading", () => {
   });
 });
 
+describe("readingsOf", () => {
+  it("drops readings that only differ by okurigana marks", () => {
+    const k: StudyKanji = { character: "成", meanings: [], onyomi: ["セイ"], kunyomi: ["な.す", "なす"], jlpt: null };
+    expect(readingsOf(k)).toEqual(["セイ", "なす"]);
+  });
+});
+
 describe("makeQuestion", () => {
   const n5 = all.filter((k) => k.jlpt === 5);
 
