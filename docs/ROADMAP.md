@@ -77,7 +77,13 @@ Order is provisional; revisit after Day 7.
       review deck and banner, and says when the next review is. Detail pages
       show the next review and offer Easy / Difficult / Forgotten marks.
       Progress saved before scheduling still loads.
-- [ ] Expanded quiz types (missing component, reconstruct, similar kanji)
+- [x] **Day 13 — Expanded quiz types** (2026-10-30)
+      Four component questions alongside the basic three: the missing part
+      (語 = 言 + ？), which kanji contains a part, which kanji a set of parts
+      builds (reconstruct), and picking a kanji from its look-alikes.
+      Distractors prefer look-alikes and are filtered so none can also be
+      right; explanations show how the answer and your pick are built.
+      Quizzes can use meanings & readings, parts & look-alikes, or both.
 - [ ] Semantic and phonetic component roles, with uncertainty marked
 - [ ] Example sentences
 - [x] **Day 11 — Personal notes and mnemonics** (2026-10-28)
