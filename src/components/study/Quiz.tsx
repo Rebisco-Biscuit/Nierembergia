@@ -25,6 +25,35 @@ function describe(k: StudyKanji) {
   );
 }
 
+/** "語 = 言 + 吾"; a null part shows as "？". */
+function Equation({ result, parts }: { result: string; parts: (string | null)[] }) {
+  return (
+    <span lang="ja" className="font-serif">
+      {result} ={" "}
+      {parts.map((p, i) => (
+        <span key={i}>
+          {i > 0 && " + "}
+          {p ?? <span className="text-accent">？</span>}
+        </span>
+      ))}
+    </span>
+  );
+}
+
+/** How a kanji is built, for explanations: " — 語 = 言 + 吾". */
+function builtFrom(k: StudyKanji | undefined) {
+  if (!k?.parts || k.parts.length < 2) return null;
+  return (
+    <>
+      {" "}
+      (<Equation result={k.character} parts={k.parts} />)
+    </>
+  );
+}
+
+/** Kinds whose options are kanji (or components) rather than meanings or readings. */
+const GLYPH_OPTIONS = new Set(["kanji", "missing", "contains", "build", "lookalike"]);
+
 export function Quiz({
   questions,
   onAnswer,
@@ -77,7 +106,15 @@ export function Quiz({
   });
 
   if (done) {
-    return <SessionSummary title="Quiz done" results={results} onRetryMissed={onRetry} onRestart={onRestart} onExit={onExit} />;
+    return (
+      <SessionSummary
+        title="Quiz done"
+        results={results}
+        onRetryMissed={onRetry}
+        onRestart={onRestart}
+        onExit={onExit}
+      />
+    );
   }
 
   const { kind, target, options, answer } = question;
@@ -89,8 +126,20 @@ export function Quiz({
       <SessionProgress index={index} total={questions.length} />
       <div className="rounded-2xl border border-border bg-surface p-6 text-center">
         <p className="text-sm text-muted">{QUESTION_PROMPTS[kind]}</p>
-        {kind === "kanji" ? (
+        {kind === "kanji" || kind === "lookalike" ? (
           <p className="mt-3 text-2xl font-medium">“{target.meanings[0]}”</p>
+        ) : kind === "missing" ? (
+          <p className="mt-3 text-6xl leading-none">
+            <Equation result={target.character} parts={question.parts ?? []} />
+          </p>
+        ) : kind === "build" ? (
+          <p lang="ja" className="mt-3 font-serif text-6xl leading-none">
+            {(question.parts ?? []).join(" + ")} = <span className="text-accent">？</span>
+          </p>
+        ) : kind === "contains" ? (
+          <p lang="ja" className="mt-3 font-serif text-8xl leading-none">
+            {question.component}
+          </p>
         ) : (
           <p lang="ja" className="mt-3 font-serif text-8xl leading-none">
             {target.character}
@@ -118,12 +167,23 @@ export function Quiz({
                 className={`flex w-full items-center gap-3 rounded-lg border px-4 py-3 text-left transition-colors ${style}`}
               >
                 <kbd className="text-xs text-muted">{i + 1}</kbd>
-                <span lang={kind === "meaning" ? undefined : "ja"} className={kind === "kanji" ? "font-serif text-3xl" : "text-lg"}>
+                <span
+                  lang={kind === "meaning" ? undefined : "ja"}
+                  className={GLYPH_OPTIONS.has(kind) ? "font-serif text-3xl" : "text-lg"}
+                >
                   {o.label}
                 </span>
                 {kind === "reading" && <Romaji reading={o.label} className="text-sm" />}
-                {answered && isAnswer && <span className="ml-auto text-sm" aria-label="correct answer">✓</span>}
-                {answered && isChosen && !isAnswer && <span className="ml-auto text-sm" aria-label="your answer">✗</span>}
+                {answered && isAnswer && (
+                  <span className="ml-auto text-sm" aria-label="correct answer">
+                    ✓
+                  </span>
+                )}
+                {answered && isChosen && !isAnswer && (
+                  <span className="ml-auto text-sm" aria-label="your answer">
+                    ✗
+                  </span>
+                )}
               </button>
             </li>
           );
@@ -132,11 +192,25 @@ export function Quiz({
 
       {answered && (
         <div className="space-y-3 rounded-xl border border-border bg-surface p-4 text-sm" aria-live="polite">
-          <p className={`font-medium ${wasRight ? "text-success" : "text-danger"}`}>{wasRight ? "Correct!" : "Not quite."}</p>
-          <p>{describe(target)}.</p>
+          <p className={`font-medium ${wasRight ? "text-success" : "text-danger"}`}>
+            {wasRight ? "Correct!" : "Not quite."}
+          </p>
+          <p>
+            {describe(target)}
+            {builtFrom(target)}.
+          </p>
           {!wasRight && (
             <p className="text-muted">
-              You picked “{options[chosen].label}”: that&apos;s {options[chosen].kanji ? describe(options[chosen].kanji) : "a component"}.
+              You picked “{options[chosen].label}”
+              {options[chosen].kanji ? (
+                <>
+                  : that&apos;s {describe(options[chosen].kanji)}
+                  {builtFrom(options[chosen].kanji)}
+                </>
+              ) : (
+                ", which isn't part of it"
+              )}
+              .
             </p>
           )}
           <KanjiNoteSnippet character={target.character} />
@@ -144,8 +218,14 @@ export function Quiz({
             <Link href={kanjiHref(target.character)} target="_blank" className="text-xs text-accent hover:underline">
               Open kanji page ↗
             </Link>
-            <button type="button" onClick={next} autoFocus className="rounded-lg bg-accent px-4 py-2 font-medium text-accent-foreground">
-              {index + 1 < questions.length ? "Next" : "See results"} <kbd className="ml-1 text-xs opacity-70">Enter</kbd>
+            <button
+              type="button"
+              onClick={next}
+              autoFocus
+              className="rounded-lg bg-accent px-4 py-2 font-medium text-accent-foreground"
+            >
+              {index + 1 < questions.length ? "Next" : "See results"}{" "}
+              <kbd className="ml-1 text-xs opacity-70">Enter</kbd>
             </button>
           </div>
         </div>
