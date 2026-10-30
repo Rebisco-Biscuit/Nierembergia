@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { StudyApp } from "@/components/study/StudyApp";
-import { dataset } from "@/lib/data";
-import { toStudyKanji } from "@/lib/study";
+import { getStudyKanji } from "@/lib/data";
 
 export const metadata: Metadata = {
   title: "Study — Nierembergia",
@@ -15,7 +14,7 @@ export default function StudyPage() {
       <p className="mt-1 text-sm text-muted">
         Flashcards and quizzes from your bookmarks, collections, or a JLPT level.
       </p>
-      <StudyApp all={dataset.kanji.map((k) => toStudyKanji(k))} />
+      <StudyApp all={getStudyKanji()} />
     </main>
   );
 }
