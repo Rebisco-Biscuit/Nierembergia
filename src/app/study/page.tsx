@@ -15,7 +15,7 @@ export default function StudyPage() {
       <p className="mt-1 text-sm text-muted">
         Flashcards and quizzes from your bookmarks, collections, or a JLPT level.
       </p>
-      <StudyApp all={dataset.kanji.map(toStudyKanji)} />
+      <StudyApp all={dataset.kanji.map((k) => toStudyKanji(k))} />
     </main>
   );
 }

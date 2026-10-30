@@ -136,7 +136,7 @@ export function Quiz({
           <p>{describe(target)}.</p>
           {!wasRight && (
             <p className="text-muted">
-              You picked “{options[chosen].label}”: that&apos;s {describe(options[chosen].kanji)}.
+              You picked “{options[chosen].label}”: that&apos;s {options[chosen].kanji ? describe(options[chosen].kanji) : "a component"}.
             </p>
           )}
           <KanjiNoteSnippet character={target.character} />
