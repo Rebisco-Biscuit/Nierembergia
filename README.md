@@ -37,8 +37,8 @@ URL, so they can be shared and bookmarked.
 ## Pages
 
 - `/kanji/水`: meanings, readings (with romaji), component breakdown (which part
-  hints at the meaning and which at the sound), stroke order, example words, and
-  related kanji.
+  hints at the meaning and which at the sound), stroke order, example words,
+  example sentences with furigana and romaji, and related kanji.
 - `/components`: search all components by character, name, or radical number.
 - `/component/氵`: every kanji containing a component, with filters by level,
   strokes, frequency, position, and partner component, plus the kanji that use
