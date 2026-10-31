@@ -36,11 +36,13 @@ URL, so they can be shared and bookmarked.
 
 ## Pages
 
-- `/kanji/水`: meanings, readings (with romaji), component breakdown, stroke order,
-  example words, and related kanji.
+- `/kanji/水`: meanings, readings (with romaji), component breakdown (which part
+  hints at the meaning and which at the sound), stroke order, example words, and
+  related kanji.
 - `/components`: search all components by character, name, or radical number.
 - `/component/氵`: every kanji containing a component, with filters by level,
-  strokes, frequency, position, and partner component.
+  strokes, frequency, position, and partner component, plus the kanji that use
+  it for their sound.
 - `/compare?k=待持特`: kanji side by side, with shared and distinguishing parts.
 - `/study`: flashcards and quizzes (meanings, readings, parts, and look-alikes)
   from your bookmarks, a collection, a JLPT

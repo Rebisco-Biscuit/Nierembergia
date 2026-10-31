@@ -84,7 +84,13 @@ Order is provisional; revisit after Day 7.
       Distractors prefer look-alikes and are filtered so none can also be
       right; explanations show how the answer and your pick are built.
       Quizzes can use meanings & readings, parts & look-alikes, or both.
-- [ ] Semantic and phonetic component roles, with uncertainty marked
+- [x] **Day 14 — Sound components** (2026-10-31)
+      Each sound component shows its on'yomi next to the kanji's, graded as
+      same, similar (voicing or first sound), or drifted. Unmarked parts read
+      exactly like the kanji (never the radical) are inferred as the sound
+      component and marked "?", adding 404 to KanjiVG's 1,327. Detail pages
+      sum up meaning + sound compounds; component pages list the kanji that
+      use the component for sound, grouped by how well the readings match.
 - [ ] Example sentences
 - [x] **Day 11 — Personal notes and mnemonics** (2026-10-28)
       A mnemonic and a notes field on every kanji page, saved as you type.
