@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { Decomposition } from "@/components/Decomposition";
+import { ExampleSentences } from "@/components/ExampleSentences";
 import { KanjiTile } from "@/components/KanjiTile";
 import { KanjiProgress } from "@/components/KanjiProgress";
 import { LibraryControls } from "@/components/LibraryControls";
@@ -53,6 +54,9 @@ export default async function KanjiPage({ params }: PageProps<"/kanji/[character
         <div className="space-y-10">
           <Readings detail={detail} />
           <Vocabulary detail={detail} />
+          <Section title="Example sentences">
+            <ExampleSentences sentences={detail.sentences} character={kanji.character} />
+          </Section>
           <Section title="Your notes">
             <NotesEditor character={kanji.character} />
           </Section>
