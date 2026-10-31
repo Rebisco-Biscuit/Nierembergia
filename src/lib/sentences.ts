@@ -55,6 +55,10 @@ const NEEDS_READING = /[㐀-䶿一-鿿豈-﫿々〆ヶ]/;
 /** Sentences with digits or Latin letters are skipped: their readings aren't recorded. */
 const UNREADABLE = /[0-9０-９A-Za-zＡ-Ｚａ-ｚ]/;
 
+/** Tatoeba includes crude and violent sentences; a study app shouldn't show them. */
+const UNSUITABLE =
+  /\b(fuck\w*|shit\w*|bitch\w*|cunt|cock|dick|pussy|piss\w*|bastard|asshole|whore|slut|sex\w*|porn\w*|rape\w*|nigg\w*|fag\w*|suicide|kill (yourself|you))\b/i;
+
 export const needsReading = (text: string) => NEEDS_READING.test(text);
 
 /** Splits text into runs that need furigana and runs that don't: 食べ物 → 食, べ, 物. */
@@ -90,7 +94,13 @@ function readingOfKuru(next: string): string {
  * forms reuse the headword's kanji readings (食べました: 食 is た as in 食べる).
  */
 export function wordSegments(surface: string, headword: string, reading: string): Segment[] | null {
-  const direct = align(surface, reading);
+  // Only a spelling with the headword's ending can be read as the headword (来 in 来さえ isn't くる).
+  const ending = (text: string) => {
+    const last = runs(text).at(-1) ?? "";
+    return needsReading(last) ? "" : last;
+  };
+  const sameEnding = ending(headword) === "" || ending(surface) === ending(headword);
+  const direct = sameEnding ? align(surface, reading) : null;
   if (direct) return direct;
   const base = align(headword, reading);
   if (!base) return null;
@@ -123,6 +133,14 @@ const gapRomaji = (text: string) =>
     .join("")
     .trim();
 
+/** Romaji for one word, with particles as said: は wa, には ni wa, こんにちは konnichiwa. */
+function wordRomaji(surface: string, headword: string, reading: string): string {
+  if (surface !== headword) return toRomaji(reading);
+  if (PARTICLES[surface]) return PARTICLES[surface];
+  if (/^[ぁ-ゖ]+は$/.test(surface) && surface !== "はは") return `${toRomaji(surface.slice(0, -1))}wa`;
+  return toRomaji(reading);
+}
+
 const readingOf = (segments: Segment[]) => segments.map(([text, r]) => r ?? text).join("");
 
 /**
@@ -137,7 +155,7 @@ export function buildSentence(
   words: IndexWord[],
   lookup: ReadingLookup,
 ): Sentence | null {
-  if (UNREADABLE.test(ja)) return null;
+  if (UNREADABLE.test(ja) || UNSUITABLE.test(en)) return null;
   const segments: Segment[] = [];
   let romaji = "";
   const say = (word: string, attach = false) => {
@@ -164,7 +182,7 @@ export function buildSentence(
       if (!parts) return null;
     }
     segments.push(...parts);
-    say(PARTICLES[surface] && surface === word.headword ? PARTICLES[surface] : toRomaji(readingOf(parts)));
+    say(wordRomaji(surface, word.headword, readingOf(parts)));
     cursor = at + surface.length;
   }
   if (!gap(ja.length)) return null;

@@ -44,6 +44,8 @@ describe("wordSegments", () => {
   it("knows 来る's stem changes", () => {
     expect(wordSegments("来ない", "来る", "くる")).toEqual([["来", "こ"], ["ない"]]);
     expect(wordSegments("来た", "来る", "くる")).toEqual([["来", "き"], ["た"]]);
+    // A bare stem isn't the whole word: 来さえすれば.
+    expect(wordSegments("来", "来る", "くる")).toEqual([["来", "き"]]);
   });
 });
 
@@ -70,6 +72,15 @@ describe("buildSentence", () => {
     expect(buildSentence(4, "彼は忙しい人。", "", parseIndexLine("彼(かれ) は 忙しい"), lookup)).toBeNull();
     // Digits have no recorded reading.
     expect(buildSentence(5, "２０歳です。", "", parseIndexLine("二十歳(はたち){２０歳} です"), lookup)).toBeNull();
+  });
+
+  it("writes particles as they're said", () => {
+    const s = buildSentence(7, "家族には会う。", "", parseIndexLine("家族 には 会う"), lookup)!;
+    expect(s.romaji).toBe("Kazoku niwa au.");
+  });
+
+  it("skips crude sentences", () => {
+    expect(buildSentence(6, "彼は忙しいですか。", "Is he fucking busy?", parseIndexLine("彼(かれ) は 忙しい ですか"), lookup)).toBeNull();
   });
 });
 
