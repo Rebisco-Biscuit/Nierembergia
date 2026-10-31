@@ -4,6 +4,7 @@ import radicalsJson from "@/data/radicals.json";
 import strokesJson from "@/data/strokes.json";
 import vocabJson from "@/data/vocab.json";
 import componentsJson from "@/data/components.json";
+import sentencesJson from "@/data/sentences.json";
 import { buildCatalog, buildComponentUses, type ComponentUseItem } from "./component-explorer";
 import { similarKanji } from "./similarity";
 import { buildComponentIndex, componentsOf, relatedByComponent } from "./component-index";
@@ -16,6 +17,7 @@ import {
   type SoundFamilyMember as SoundFamilyItem,
 } from "./decomposition";
 import type { ComponentNode } from "./kanjivg";
+import type { Sentence } from "./sentences";
 import { toStudyKanji, type StudyKanji } from "./study";
 import type { Dataset, Kanji, Radical } from "./types";
 import type { VocabWord } from "./vocab";
@@ -29,6 +31,8 @@ export const radicalByNumber = new Map(dataset.radicals.map((r) => [r.number, r]
 
 const kanjiByChar = new Map(dataset.kanji.map((k) => [k.character, k]));
 const vocab = vocabJson as Record<string, VocabWord[]>;
+// JSON tuples widen to string[][], so the Segment type needs a cast through unknown.
+const sentences = sentencesJson as unknown as Record<string, Sentence[]>;
 const strokes = strokesJson as Record<string, string[]>;
 const components = componentsJson as Record<string, ComponentNode>;
 export const componentIndex = buildComponentIndex(
@@ -116,6 +120,8 @@ export interface KanjiDetail {
   kanji: Kanji;
   radical: Radical;
   vocabulary: VocabWord[];
+  /** Short example sentences with furigana and romaji (Tanaka Corpus). */
+  sentences: Sentence[];
   /** SVG path data per stroke, in order; null if KanjiVG has no diagram. */
   strokes: string[] | null;
   /** Traditional forms that point at this kanji via `variantOf`. */
@@ -171,6 +177,7 @@ export function getKanjiDetail(character: string): KanjiDetail | null {
     kanji,
     radical: radicalByNumber.get(kanji.radical)!,
     vocabulary: vocab[character] ?? [],
+    sentences: sentences[character] ?? [],
     strokes: strokes[character] ?? null,
     traditionalForms: dataset.kanji.filter((k) => k.variantOf === character),
     components: decomposed,

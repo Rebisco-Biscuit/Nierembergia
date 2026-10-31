@@ -91,7 +91,13 @@ Order is provisional; revisit after Day 7.
       component and marked "?", adding 404 to KanjiVG's 1,327. Detail pages
       sum up meaning + sound compounds; component pages list the kanji that
       use the component for sound, grouped by how well the readings match.
-- [ ] Example sentences
+- [x] **Day 15 — Example sentences** (2026-11-01)
+      Up to 3 short sentences per kanji (2,253 kanji) from the Tanaka Corpus
+      on Tatoeba, with furigana, word-by-word romaji (hidden by the header
+      toggle), the English translation, and a link to the source. Readings are
+      generated from the corpus's word index and JMdict; only sentences whose
+      every kanji can be read are kept, crude ones are filtered out, and
+      sentences with easier kanji and different words are preferred.
 - [x] **Day 11 — Personal notes and mnemonics** (2026-10-28)
       A mnemonic and a notes field on every kanji page, saved as you type.
       They show on the back of flashcards, in quiz explanations, and in each

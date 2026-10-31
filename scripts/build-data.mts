@@ -6,6 +6,15 @@ import { XMLParser } from "fast-xml-parser";
 import type { Kanji, Radical, JlptLevel } from "../src/lib/types.ts";
 import { parseComponents, type ComponentNode } from "../src/lib/kanjivg.ts";
 import { pickExamples, type VocabCandidate, type VocabWord } from "../src/lib/vocab.ts";
+import {
+  buildSentence,
+  needsReading,
+  parseIndexLine,
+  pickSentences,
+  type ReadingLookup,
+  type Sentence,
+  type SentenceCandidate,
+} from "../src/lib/sentences.ts";
 
 const ROOT = path.join(import.meta.dirname, "..");
 const RAW = path.join(ROOT, "data", "raw");
@@ -191,8 +200,13 @@ const UNUSUAL_READING = /&(ik|ok|rk|sk);/;
 async function buildVocab(chars: Set<string>) {
   const xml = await readFile(path.join(RAW, "JMdict_e.xml"), "utf8");
   const byChar = new Map<string, VocabCandidate[]>();
+  // Every spelling's first reading, for example sentences: by entry number,
+  // and by spelling alone (common entries win when several share one).
+  const readingBySeq = new Map<string, Map<string, string>>();
+  const readingByWord = new Map<string, { reading: string; common: boolean }>();
 
   for (const [entry] of xml.matchAll(/<entry>[\s\S]*?<\/entry>/g)) {
+    recordReadings(entry, readingBySeq, readingByWord);
     if (!entry.includes("<ke_pri>")) continue; // only common words
     const rEles = [...entry.matchAll(/<r_ele>[\s\S]*?<\/r_ele>/g)]
       .map(([r]) => r)
@@ -230,7 +244,67 @@ async function buildVocab(chars: Set<string>) {
     const words = pickExamples(byChar.get(char) ?? [], char, VOCAB_PER_KANJI);
     if (words.length) vocab[char] = words;
   }
-  return vocab;
+  const lookup: ReadingLookup = (word, seq) =>
+    (seq && readingBySeq.get(seq)?.get(word)) || readingByWord.get(word)?.reading;
+  return { vocab, lookup };
+}
+
+function recordReadings(
+  entry: string,
+  bySeq: Map<string, Map<string, string>>,
+  byWord: Map<string, { reading: string; common: boolean }>,
+) {
+  const seq = tagValues(entry, "ent_seq")[0];
+  const rEles = [...entry.matchAll(/<r_ele>[\s\S]*?<\/r_ele>/g)]
+    .map(([r]) => r)
+    .filter((r) => !r.includes("<re_nokanji/>"));
+  const spellings = new Map<string, string>();
+  for (const [kEle] of entry.matchAll(/<k_ele>[\s\S]*?<\/k_ele>/g)) {
+    const word = tagValues(kEle, "keb")[0];
+    const r = rEles.find((r) => {
+      const restrict = tagValues(r, "re_restr");
+      return restrict.length === 0 || restrict.includes(word);
+    });
+    if (!r) continue;
+    const reading = tagValues(r, "reb")[0];
+    spellings.set(word, reading);
+    const common = kEle.includes("<ke_pri>");
+    const known = byWord.get(word);
+    if (!known || (common && !known.common)) byWord.set(word, { reading, common });
+  }
+  bySeq.set(seq, spellings);
+}
+
+/**
+ * Example sentences from the Tanaka Corpus: A lines hold the Japanese and
+ * English, B lines index the words. Only fully readable sentences are kept.
+ */
+async function buildSentences(kanji: Kanji[], lookup: ReadingLookup) {
+  const text = await readFile(path.join(RAW, "examples.utf"), "utf8");
+  const chars = new Set(kanji.map((k) => k.character));
+  const byChar = new Map<string, SentenceCandidate[]>();
+  let readable = 0;
+  for (const [, ja, en, id, index] of text.matchAll(/^A: ([^\t]+)\t(.+?)#ID=(\d+)_\d+\r?\nB: (.+?)\r?$/gm)) {
+    const words = parseIndexLine(index);
+    const sentence = buildSentence(Number(id), ja, en.trim(), words, lookup);
+    if (!sentence) continue;
+    readable++;
+    for (const char of new Set([...ja].filter((ch) => chars.has(ch)))) {
+      const using = words.filter((w) => (w.surface ?? w.headword).includes(char));
+      if (!byChar.has(char)) byChar.set(char, []);
+      byChar.get(char)!.push({ sentence, words: using.map((w) => w.headword), good: using.some((w) => w.good) });
+    }
+  }
+  // N5 is easiest (1), N1 hardest (5); kanji outside the JLPT lists count as 6.
+  const level = new Map(kanji.map((k) => [k.character, k.jlpt ? 6 - k.jlpt : 6]));
+  const difficulty = (ch: string) => level.get(ch) ?? (needsReading(ch) ? 6 : 0);
+  const sentences: Record<string, Sentence[]> = {};
+  for (const char of chars) {
+    const picked = pickSentences(char, byChar.get(char) ?? [], difficulty, SENTENCES_PER_KANJI);
+    if (picked.length) sentences[char] = picked;
+  }
+  console.log(`${readable} readable sentences.`);
+  return sentences;
 }
 
 /**
@@ -257,17 +331,20 @@ async function buildKanjiVG(chars: Set<string>) {
 }
 
 const VOCAB_PER_KANJI = 8;
+const SENTENCES_PER_KANJI = 3;
 const chars = new Set(kanji.map((k) => k.character));
-const vocab = await buildVocab(chars);
+const { vocab, lookup } = await buildVocab(chars);
+const sentences = await buildSentences(kanji, lookup);
 const { strokes, components } = await buildKanjiVG(chars);
 
 await mkdir(OUT, { recursive: true });
 await writeFile(path.join(OUT, "kanji.json"), JSON.stringify(kanji));
 await writeFile(path.join(OUT, "radicals.json"), JSON.stringify(radicals));
 await writeFile(path.join(OUT, "vocab.json"), JSON.stringify(vocab));
+await writeFile(path.join(OUT, "sentences.json"), JSON.stringify(sentences));
 await writeFile(path.join(OUT, "strokes.json"), JSON.stringify(strokes));
 await writeFile(path.join(OUT, "components.json"), JSON.stringify(components));
 console.log(
   `Wrote ${kanji.length} kanji, ${radicals.length} radicals, ` +
-    `vocabulary for ${Object.keys(vocab).length}, strokes and components for ${Object.keys(strokes).length}.`,
+    `vocabulary for ${Object.keys(vocab).length}, sentences for ${Object.keys(sentences).length}, strokes and components for ${Object.keys(strokes).length}.`,
 );
