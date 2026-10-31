@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 import componentsJson from "@/data/components.json";
 import kanjiJson from "@/data/kanji.json";
 import radicalsJson from "@/data/radicals.json";
-import { decompose, positionLabel, radicalNumberOf, type DecomposedComponent } from "./decomposition";
+import {
+  buildSoundFamilies,
+  decompose,
+  positionLabel,
+  radicalNumberOf,
+  type DecomposedComponent,
+} from "./decomposition";
 import type { ComponentNode } from "./kanjivg";
 import type { Kanji, Radical } from "./types";
 
@@ -69,8 +75,53 @@ describe("decompose", () => {
     expect(gon.usedInCount).toBe(0);
   });
 
+  it("grades how the sound component's readings match", () => {
+    const sound = (char: string) => of(char).flatMap((c) => c.roles).find((r) => r.kind === "phonetic")?.evidence;
+    expect(sound("語")).toMatchObject({ component: "吾", match: "same", shared: ["ゴ"] });
+    expect(sound("住")).toMatchObject({ component: "主", match: "close" });
+    expect(sound("仮")).toMatchObject({ component: "反", match: "drifted" });
+  });
+
+  it("infers an unmarked sound component that shares the kanji's reading", () => {
+    const [nin, rei] = of("伶");
+    expect(roles(rei)).toEqual(["phonetic:inferred"]);
+    expect(rei.roles[0].evidence?.shared).toEqual(["レイ"]);
+    // The radical then carries the meaning, as for marked compounds.
+    expect(roles(nin)).toEqual(["radical:KANJIDIC2", "semantic:inferred"]);
+  });
+
+  it("never infers the radical as the sound component", () => {
+    // 叩 (コウ): 口 is read コウ too, but it's the radical.
+    expect(of("叩").flatMap((c) => c.roles).filter((r) => r.kind === "phonetic")).toEqual([]);
+  });
+
+  it("leaves compounds with no shared reading alone", () => {
+    expect(of("林").flatMap((c) => roles(c))).toEqual(["radical:KANJIDIC2"]);
+  });
+
   it("returns no components for a kanji KanjiVG doesn't split", () => {
     expect(of("一")).toEqual([]);
+  });
+});
+
+describe("buildSoundFamilies", () => {
+  const families = buildSoundFamilies(kanji, components, ctx);
+
+  it("collects the kanji that use a component for sound, best match first", () => {
+    const sei = families.get("青")!;
+    expect(sei.map((m) => m.kanji)).toEqual(expect.arrayContaining(["清", "晴", "精", "静"]));
+    const order = ["same", "close", "drifted", null];
+    const ranks = sei.map((m) => order.indexOf(m.match));
+    expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+    expect(sei.find((m) => m.kanji === "晴")).toMatchObject({ match: "same", inferred: false });
+  });
+
+  it("includes inferred sound components, flagged", () => {
+    expect(families.get("令")!.find((m) => m.kanji === "伶")).toMatchObject({ match: "same", inferred: true });
+  });
+
+  it("leaves out components that are never a sound component", () => {
+    expect(families.has("氵")).toBe(false);
   });
 });
 

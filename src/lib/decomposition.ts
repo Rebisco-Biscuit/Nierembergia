@@ -1,4 +1,5 @@
 import type { ComponentNode } from "./kanjivg";
+import { compareReadings, type SoundEvidence, type SoundMatch } from "./phonetic";
 import type { Kanji, Radical } from "./types";
 
 export type RoleKind = "radical" | "phonetic" | "semantic";
@@ -8,6 +9,8 @@ export interface Role {
   /** Where the claim comes from. "inferred" means derived by this app, not stated by a source. */
   source: "KANJIDIC2" | "KanjiVG" | "inferred";
   note?: string;
+  /** For sound roles: how the component's readings compare with the kanji's. */
+  evidence?: SoundEvidence;
 }
 
 export interface DecomposedComponent {
@@ -66,6 +69,14 @@ export function decompose(
   root: ComponentNode,
   ctx: DecompositionContext,
 ): DecomposedComponent[] {
+  /** Compares the kanji's on'yomi with the first of `chars` that has any. */
+  const soundEvidence = (...chars: (string | undefined)[]) => {
+    for (const char of chars) {
+      const readings = char ? ctx.kanjiByChar.get(char)?.onyomi : undefined;
+      if (readings?.length) return compareReadings(char!, readings, kanji.onyomi);
+    }
+    return null;
+  };
   const build = (node: ComponentNode): DecomposedComponent => ({
     character: node.element ?? null,
     name: describe(node, ctx),
@@ -78,6 +89,7 @@ export function decompose(
             kind: "phonetic",
             source: "KanjiVG",
             ...(node.phon !== node.element && { note: `Sound component: ${node.phon}` }),
+            ...withEvidence(soundEvidence(node.phon, node.element, node.original)),
           },
         ]
       : [],
@@ -92,6 +104,7 @@ export function decompose(
   const radicalNode = findKanjiRadical(kanji, root, components);
   if (radicalNode) {
     radicalNode.roles.unshift({ kind: "radical", source: "KANJIDIC2" });
+    if (!components.some(hasRole("phonetic"))) inferPhonetic(kanji, components, radicalNode, soundEvidence);
     // In a phono-semantic compound, the non-phonetic radical carries the meaning.
     const hasPhonetic = components.some((c) => c.roles.some((r) => r.kind === "phonetic"));
     const isTopLevel = components.includes(radicalNode);
@@ -104,6 +117,44 @@ export function decompose(
     }
   }
   return components;
+}
+
+const withEvidence = (evidence: SoundEvidence | null) => (evidence ? { evidence } : {});
+
+/** Does this component, or any inside it, have a role of this kind? */
+const hasRole =
+  (kind: RoleKind) =>
+  (c: DecomposedComponent): boolean =>
+    c.roles.some((r) => r.kind === kind) || c.children.some(hasRole(kind));
+
+const contains = (c: DecomposedComponent, target: DecomposedComponent): boolean =>
+  c === target || c.children.some((child) => contains(child, target));
+
+/**
+ * KanjiVG marks sound components for about half the kanji it splits. For the
+ * rest, a top-level component other than the radical that is a kanji read
+ * exactly like this one is probably the sound component (伶 = 亻 + 令, レイ);
+ * the largest such component is marked, as inferred.
+ */
+function inferPhonetic(
+  kanji: Kanji,
+  components: DecomposedComponent[],
+  radicalNode: DecomposedComponent,
+  soundEvidence: (char: string) => SoundEvidence | null,
+) {
+  const candidates = components
+    .filter((c) => c.character && c.character !== kanji.character && !contains(c, radicalNode))
+    .map((c) => ({ c, evidence: soundEvidence(c.character!) }))
+    .filter(({ evidence }) => evidence?.match === "same")
+    .sort((a, b) => b.c.strokes.length - a.c.strokes.length);
+  const best = candidates[0];
+  if (!best) return;
+  best.c.roles.push({
+    kind: "phonetic",
+    source: "inferred",
+    note: `Inferred: ${best.c.character} isn't marked as the sound component, but it's read like this kanji.`,
+    evidence: best.evidence!,
+  });
 }
 
 /**
@@ -146,4 +197,52 @@ const POSITION_LABELS: Record<string, string> = {
 
 export function positionLabel(position: string | null): string | null {
   return position ? (POSITION_LABELS[position] ?? null) : null;
+}
+
+export interface SoundFamilyMember {
+  kanji: string;
+  /** How the kanji's reading matches the component's; null if either has no on'yomi. */
+  match: SoundMatch | null;
+  /** The kanji's readings that match the component's (exactly or nearly). */
+  shared: string[];
+  /** True when the app inferred the role rather than KanjiVG marking it. */
+  inferred: boolean;
+}
+
+const MATCH_ORDER: (SoundMatch | null)[] = ["same", "close", "drifted", null];
+
+/**
+ * Component → the kanji that use it as their sound component (marked or
+ * inferred), best reading match first, then in `kanji` order.
+ */
+export function buildSoundFamilies(
+  kanji: Kanji[],
+  trees: Record<string, ComponentNode>,
+  ctx: DecompositionContext,
+): Map<string, SoundFamilyMember[]> {
+  const families = new Map<string, SoundFamilyMember[]>();
+  for (const k of kanji) {
+    const tree = trees[k.character];
+    if (!tree) continue;
+    const walk = (c: DecomposedComponent) => {
+      const role = c.roles.find((r) => r.kind === "phonetic");
+      if (role && c.character) {
+        const members = families.get(c.character) ?? [];
+        members.push({
+          kanji: k.character,
+          match: role.evidence?.match ?? null,
+          shared: role.evidence?.shared ?? [],
+          inferred: role.source === "inferred",
+        });
+        families.set(c.character, members);
+      }
+      c.children.forEach(walk);
+    };
+    decompose(k, tree, ctx).forEach(walk);
+  }
+  // A stable sort keeps the input order within each match.
+  for (const members of families.values()) {
+    members.sort((a, b) => MATCH_ORDER.indexOf(a.match) - MATCH_ORDER.indexOf(b.match));
+  }
+  return families;
 }

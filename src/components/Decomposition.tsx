@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { positionLabel, type DecomposedComponent, type Role } from "@/lib/decomposition";
 import { componentHref } from "@/lib/format";
+import { SOUND_MATCH_LABELS, type SoundEvidence } from "@/lib/phonetic";
+import { Romaji } from "./Romaji";
 
 // KanjiVG draws on a 109×109 canvas.
 const VIEWBOX = "0 0 109 109";
@@ -57,13 +59,52 @@ function RoleBadge({ role }: { role: Role }) {
   );
 }
 
+const MATCH_STYLES: Record<SoundEvidence["match"], string> = {
+  same: "text-accent",
+  close: "text-foreground",
+  drifted: "text-muted",
+};
+
+function Readings({ readings, highlight }: { readings: string[]; highlight: string[] }) {
+  return (
+    <>
+      {readings.map((r, i) => (
+        <span key={r}>
+          {i > 0 && "、"}
+          <span lang="ja" className={highlight.includes(r) ? "font-semibold text-foreground" : undefined}>
+            {r}
+          </span>{" "}
+          <Romaji reading={r} />
+        </span>
+      ))}
+    </>
+  );
+}
+
+/** "吾 is read ゴ go; 語 is read ゴ go. Same reading." */
+function SoundEvidenceLine({ evidence, kanji }: { evidence: SoundEvidence; kanji: string }) {
+  const { component, componentReadings, kanjiReadings, match, shared } = evidence;
+  // Highlight the component readings the kanji's shared readings came from.
+  const sharedFrom = match === "same" ? shared : [];
+  return (
+    <p className="mt-1 text-xs text-muted">
+      <span lang="ja">{component}</span> is read <Readings readings={componentReadings} highlight={sharedFrom} />;{" "}
+      <span lang="ja">{kanji}</span> is read <Readings readings={kanjiReadings} highlight={shared} />.{" "}
+      <strong className={`font-medium ${MATCH_STYLES[match]}`}>{SOUND_MATCH_LABELS[match]}.</strong>
+      {match === "drifted" && " Sound components hint at old readings, which have since changed."}
+    </p>
+  );
+}
+
 function ComponentCard({
   component,
+  kanji,
   strokes,
   color,
   depth,
 }: {
   component: DecomposedComponent;
+  kanji: string;
   strokes: string[];
   color: string;
   depth: number;
@@ -71,6 +112,7 @@ function ComponentCard({
   const { character, name, radicalNumber, roles, children } = component;
   const position = positionLabel(component.position);
   const notes = roles.filter((r) => r.note).map((r) => r.note);
+  const evidence = roles.find((r) => r.evidence)?.evidence;
   const nested = depth < MAX_DEPTH ? children : [];
   const linkable = component.usedInCount > 0;
 
@@ -124,16 +166,40 @@ function ComponentCard({
               {note}
             </p>
           ))}
+          {evidence && <SoundEvidenceLine evidence={evidence} kanji={kanji} />}
         </div>
       </div>
       {nested.length > 0 && (
         <ul className="ml-6 mt-2 space-y-2 border-l border-border pl-3">
           {nested.map((child, i) => (
-            <ComponentCard key={i} component={child} strokes={strokes} color={color} depth={depth + 1} />
+            <ComponentCard key={i} component={child} kanji={kanji} strokes={strokes} color={color} depth={depth + 1} />
           ))}
         </ul>
       )}
     </li>
+  );
+}
+
+const roleOf = (c: DecomposedComponent, kind: Role["kind"]) => c.roles.find((r) => r.kind === kind);
+
+/** "A meaning + sound compound: 言 hints at the meaning, 吾 at the sound." */
+function CompoundSummary({ components }: { components: DecomposedComponent[] }) {
+  const meaning = components.find((c) => roleOf(c, "semantic"));
+  const sound = components.find((c) => roleOf(c, "phonetic"));
+  if (!meaning?.character || !sound?.character) return null;
+  const guessed = roleOf(sound, "phonetic")!.source === "inferred";
+  return (
+    <p className="rounded-xl border border-border bg-surface px-4 py-3 text-sm">
+      {guessed ? "Probably a" : "A"} <strong>meaning + sound</strong> compound:{" "}
+      <span lang="ja" className="font-serif text-base">
+        {meaning.character}
+      </span>{" "}
+      hints at the meaning,{" "}
+      <span lang="ja" className="font-serif text-base">
+        {sound.character}
+      </span>{" "}
+      at the sound.
+    </p>
   );
 }
 
@@ -194,17 +260,20 @@ export function Decomposition({
         </p>
       </div>
 
+      <CompoundSummary components={components} />
+
       <ul className="space-y-3">
         {components.map((c, i) => (
-          <ComponentCard key={i} component={c} strokes={strokes} color={colorFor(i)} depth={1} />
+          <ComponentCard key={i} component={c} kanji={character} strokes={strokes} color={colorFor(i)} depth={1} />
         ))}
       </ul>
 
       <p className="text-xs text-muted">
         Components and sound marks from KanjiVG; the radical is the kanji&apos;s dictionary
-        radical (KANJIDIC2). Roles with a <span aria-hidden>?</span>
-        <span className="sr-only">question mark</span> are inferred, not stated by a source, and
-        describe how the character is built rather than its full etymology.
+        radical (KANJIDIC2); readings from KANJIDIC2. Roles with a <span aria-hidden>?</span>
+        <span className="sr-only">question mark</span> are inferred, not stated by a source: a sound
+        component is inferred when an unmarked part is read exactly like the kanji. They describe how
+        the character is built rather than its full etymology.
       </p>
     </div>
   );
