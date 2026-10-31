@@ -69,6 +69,30 @@ describe("decompose", () => {
     expect(gon.usedInCount).toBe(0);
   });
 
+  it("grades how the sound component's readings match", () => {
+    const sound = (char: string) => of(char).flatMap((c) => c.roles).find((r) => r.kind === "phonetic")?.evidence;
+    expect(sound("語")).toMatchObject({ component: "吾", match: "same", shared: ["ゴ"] });
+    expect(sound("住")).toMatchObject({ component: "主", match: "close" });
+    expect(sound("仮")).toMatchObject({ component: "反", match: "drifted" });
+  });
+
+  it("infers an unmarked sound component that shares the kanji's reading", () => {
+    const [nin, rei] = of("伶");
+    expect(roles(rei)).toEqual(["phonetic:inferred"]);
+    expect(rei.roles[0].evidence?.shared).toEqual(["レイ"]);
+    // The radical then carries the meaning, as for marked compounds.
+    expect(roles(nin)).toEqual(["radical:KANJIDIC2", "semantic:inferred"]);
+  });
+
+  it("never infers the radical as the sound component", () => {
+    // 叩 (コウ): 口 is read コウ too, but it's the radical.
+    expect(of("叩").flatMap((c) => c.roles).filter((r) => r.kind === "phonetic")).toEqual([]);
+  });
+
+  it("leaves compounds with no shared reading alone", () => {
+    expect(of("林").flatMap((c) => roles(c))).toEqual(["radical:KANJIDIC2"]);
+  });
+
   it("returns no components for a kanji KanjiVG doesn't split", () => {
     expect(of("一")).toEqual([]);
   });
