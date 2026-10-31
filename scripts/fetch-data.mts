@@ -29,6 +29,12 @@ const SOURCES = [
     gzip: true,
   },
   {
+    // The Tanaka Corpus of example sentences, as maintained by Tatoeba.
+    file: "examples.utf",
+    url: "http://ftp.edrdg.org/pub/Nihongo/examples.utf.gz",
+    gzip: true,
+  },
+  {
     file: "UnicodeData.txt",
     url: "https://www.unicode.org/Public/UCD/latest/ucd/UnicodeData.txt",
     gzip: false,
