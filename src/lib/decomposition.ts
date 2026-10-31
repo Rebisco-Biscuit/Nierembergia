@@ -1,5 +1,5 @@
 import type { ComponentNode } from "./kanjivg";
-import { compareReadings, type SoundEvidence } from "./phonetic";
+import { compareReadings, type SoundEvidence, type SoundMatch } from "./phonetic";
 import type { Kanji, Radical } from "./types";
 
 export type RoleKind = "radical" | "phonetic" | "semantic";
@@ -197,4 +197,52 @@ const POSITION_LABELS: Record<string, string> = {
 
 export function positionLabel(position: string | null): string | null {
   return position ? (POSITION_LABELS[position] ?? null) : null;
+}
+
+export interface SoundFamilyMember {
+  kanji: string;
+  /** How the kanji's reading matches the component's; null if either has no on'yomi. */
+  match: SoundMatch | null;
+  /** The kanji's readings that match the component's (exactly or nearly). */
+  shared: string[];
+  /** True when the app inferred the role rather than KanjiVG marking it. */
+  inferred: boolean;
+}
+
+const MATCH_ORDER: (SoundMatch | null)[] = ["same", "close", "drifted", null];
+
+/**
+ * Component → the kanji that use it as their sound component (marked or
+ * inferred), best reading match first, then in `kanji` order.
+ */
+export function buildSoundFamilies(
+  kanji: Kanji[],
+  trees: Record<string, ComponentNode>,
+  ctx: DecompositionContext,
+): Map<string, SoundFamilyMember[]> {
+  const families = new Map<string, SoundFamilyMember[]>();
+  for (const k of kanji) {
+    const tree = trees[k.character];
+    if (!tree) continue;
+    const walk = (c: DecomposedComponent) => {
+      const role = c.roles.find((r) => r.kind === "phonetic");
+      if (role && c.character) {
+        const members = families.get(c.character) ?? [];
+        members.push({
+          kanji: k.character,
+          match: role.evidence?.match ?? null,
+          shared: role.evidence?.shared ?? [],
+          inferred: role.source === "inferred",
+        });
+        families.set(c.character, members);
+      }
+      c.children.forEach(walk);
+    };
+    decompose(k, tree, ctx).forEach(walk);
+  }
+  // A stable sort keeps the input order within each match.
+  for (const members of families.values()) {
+    members.sort((a, b) => MATCH_ORDER.indexOf(a.match) - MATCH_ORDER.indexOf(b.match));
+  }
+  return families;
 }

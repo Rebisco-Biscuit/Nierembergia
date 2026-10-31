@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 import componentsJson from "@/data/components.json";
 import kanjiJson from "@/data/kanji.json";
 import radicalsJson from "@/data/radicals.json";
-import { decompose, positionLabel, radicalNumberOf, type DecomposedComponent } from "./decomposition";
+import {
+  buildSoundFamilies,
+  decompose,
+  positionLabel,
+  radicalNumberOf,
+  type DecomposedComponent,
+} from "./decomposition";
 import type { ComponentNode } from "./kanjivg";
 import type { Kanji, Radical } from "./types";
 
@@ -95,6 +101,27 @@ describe("decompose", () => {
 
   it("returns no components for a kanji KanjiVG doesn't split", () => {
     expect(of("一")).toEqual([]);
+  });
+});
+
+describe("buildSoundFamilies", () => {
+  const families = buildSoundFamilies(kanji, components, ctx);
+
+  it("collects the kanji that use a component for sound, best match first", () => {
+    const sei = families.get("青")!;
+    expect(sei.map((m) => m.kanji)).toEqual(expect.arrayContaining(["清", "晴", "精", "静"]));
+    const order = ["same", "close", "drifted", null];
+    const ranks = sei.map((m) => order.indexOf(m.match));
+    expect(ranks).toEqual([...ranks].sort((a, b) => a - b));
+    expect(sei.find((m) => m.kanji === "晴")).toMatchObject({ match: "same", inferred: false });
+  });
+
+  it("includes inferred sound components, flagged", () => {
+    expect(families.get("令")!.find((m) => m.kanji === "伶")).toMatchObject({ match: "same", inferred: true });
+  });
+
+  it("leaves out components that are never a sound component", () => {
+    expect(families.has("氵")).toBe(false);
   });
 });
 

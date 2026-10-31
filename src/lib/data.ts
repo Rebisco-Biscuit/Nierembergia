@@ -7,7 +7,14 @@ import componentsJson from "@/data/components.json";
 import { buildCatalog, buildComponentUses, type ComponentUseItem } from "./component-explorer";
 import { similarKanji } from "./similarity";
 import { buildComponentIndex, componentsOf, relatedByComponent } from "./component-index";
-import { decompose, meaningOf, radicalNumberOf, type DecomposedComponent } from "./decomposition";
+import {
+  buildSoundFamilies,
+  decompose,
+  meaningOf,
+  radicalNumberOf,
+  type DecomposedComponent,
+  type SoundFamilyMember as SoundFamilyItem,
+} from "./decomposition";
 import type { ComponentNode } from "./kanjivg";
 import { toStudyKanji, type StudyKanji } from "./study";
 import type { Dataset, Kanji, Radical } from "./types";
@@ -57,7 +64,20 @@ export interface ComponentDetail {
   usedIn: Kanji[];
   /** How each of those kanji uses it, for filtering by position or partner. */
   uses: ComponentUseItem[];
+  /** Kanji that use it as their sound component, best reading match first. */
+  soundFamily: SoundFamilyMember[];
 }
+
+export interface SoundFamilyMember extends Omit<SoundFamilyItem, "kanji"> {
+  kanji: Kanji;
+}
+
+/** Component → the kanji that use it for sound, built on first use. */
+let soundFamilies: Map<string, SoundFamilyItem[]> | null = null;
+const soundFamilyOf = (character: string): SoundFamilyMember[] => {
+  soundFamilies ??= buildSoundFamilies(dataset.kanji, components, decompositionContext);
+  return (soundFamilies.get(character) ?? []).map((m) => ({ ...m, kanji: kanjiByChar.get(m.kanji)! }));
+};
 
 
 export function getComponentDetail(character: string): ComponentDetail | null {
@@ -88,6 +108,7 @@ export function getComponentDetail(character: string): ComponentDetail | null {
         partners: u.partners,
       };
     }),
+    soundFamily: soundFamilyOf(character),
   };
 }
 
