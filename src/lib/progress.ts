@@ -7,6 +7,15 @@ export const PROGRESS_VERSION = 1;
 /** Correct answers in a row that count a kanji as mastered. */
 export const MASTERED_STREAK = 3;
 const MAX_SESSIONS = 200;
+/** Days of activity kept for charts (a little over a year). */
+const MAX_DAYS = 400;
+/** A session's time counts at most this much, in case the tab was left open. */
+export const MAX_SESSION_MS = 60 * 60 * 1000;
+
+export interface Tally {
+  seen: number;
+  correct: number;
+}
 
 export interface KanjiStats {
   seen: number;
@@ -16,6 +25,8 @@ export interface KanjiStats {
   lastSeen: number;
   /** Spaced-repetition schedule; absent for progress saved before scheduling existed. */
   srs?: SrsState;
+  /** Answers by quiz question kind (meaning, reading, missing…), for weak-area stats. */
+  byKind?: Record<string, Tally>;
 }
 
 export type StudyMode = "flashcards" | "quiz";
@@ -25,6 +36,18 @@ export interface SessionRecord {
   mode: StudyMode;
   total: number;
   correct: number;
+  /** How long it took; absent for sessions saved before timing existed. */
+  ms?: number;
+}
+
+/** One calendar day of studying. */
+export interface DayActivity {
+  answers: number;
+  correct: number;
+  /** Kanji answered for the first time. */
+  learned: number;
+  /** Time spent in finished sessions. */
+  ms: number;
 }
 
 export interface Progress {
@@ -32,9 +55,39 @@ export interface Progress {
   kanji: Record<string, KanjiStats>;
   /** Finished sessions, oldest first. */
   sessions: SessionRecord[];
+  /** Activity by local day ("2026-11-02"), for charts and daily targets. */
+  daily: Record<string, DayActivity>;
+  /** Kanji pages visited, with the first visit's time. */
+  explored: Record<string, number>;
 }
 
-export const emptyProgress = (): Progress => ({ version: PROGRESS_VERSION, kanji: {}, sessions: [] });
+export const emptyProgress = (): Progress => ({
+  version: PROGRESS_VERSION,
+  kanji: {},
+  sessions: [],
+  daily: {},
+  explored: {},
+});
+
+const emptyDay = (): DayActivity => ({ answers: 0, correct: 0, learned: 0, ms: 0 });
+
+/** Adds to one day's activity, dropping the oldest days past MAX_DAYS. */
+function addToDay(daily: Record<string, DayActivity>, day: string, add: Partial<DayActivity>) {
+  const prev = daily[day] ?? emptyDay();
+  const next = {
+    ...daily,
+    [day]: {
+      answers: prev.answers + (add.answers ?? 0),
+      correct: prev.correct + (add.correct ?? 0),
+      learned: prev.learned + (add.learned ?? 0),
+      ms: prev.ms + (add.ms ?? 0),
+    },
+  };
+  const days = Object.keys(next);
+  if (days.length <= MAX_DAYS) return next;
+  for (const old of days.sort().slice(0, days.length - MAX_DAYS)) delete next[old];
+  return next;
+}
 
 /**
  * Records one answer. `grade` refines it for scheduling (hard and easy are
@@ -47,25 +100,47 @@ export function recordAnswer(
   correct: boolean,
   now: number,
   grade: Grade = correct ? "good" : "forgot",
+  /** The quiz question kind, if the answer came from a quiz. */
+  kind?: string,
 ): Progress {
   const prev: KanjiStats = progress.kanji[kanji] ?? { seen: 0, correct: 0, streak: 0, lastSeen: 0 };
+  const stats: KanjiStats = {
+    seen: prev.seen + 1,
+    correct: prev.correct + (correct ? 1 : 0),
+    streak: correct ? prev.streak + 1 : 0,
+    lastSeen: now,
+    srs: schedule(prev.srs, grade, now),
+  };
+  if (prev.byKind || kind) {
+    const tally = (kind && prev.byKind?.[kind]) || { seen: 0, correct: 0 };
+    stats.byKind = kind
+      ? { ...prev.byKind, [kind]: { seen: tally.seen + 1, correct: tally.correct + (correct ? 1 : 0) } }
+      : prev.byKind;
+  }
   return {
     ...progress,
-    kanji: {
-      ...progress.kanji,
-      [kanji]: {
-        seen: prev.seen + 1,
-        correct: prev.correct + (correct ? 1 : 0),
-        streak: correct ? prev.streak + 1 : 0,
-        lastSeen: now,
-        srs: schedule(prev.srs, grade, now),
-      },
-    },
+    kanji: { ...progress.kanji, [kanji]: stats },
+    daily: addToDay(progress.daily, dayKey(now), {
+      answers: 1,
+      correct: correct ? 1 : 0,
+      learned: prev.seen === 0 ? 1 : 0,
+    }),
   };
 }
 
 export function recordSession(progress: Progress, session: SessionRecord): Progress {
-  return { ...progress, sessions: [...progress.sessions, session].slice(-MAX_SESSIONS) };
+  const ms = session.ms === undefined ? undefined : Math.min(Math.max(0, Math.round(session.ms)), MAX_SESSION_MS);
+  return {
+    ...progress,
+    sessions: [...progress.sessions, { ...session, ...(ms !== undefined && { ms }) }].slice(-MAX_SESSIONS),
+    daily: ms ? addToDay(progress.daily, dayKey(session.at), { ms }) : progress.daily,
+  };
+}
+
+/** Notes a visit to a kanji's page; only the first visit is kept. */
+export function recordVisit(progress: Progress, kanji: string, now: number): Progress {
+  if (progress.explored[kanji] !== undefined) return progress;
+  return { ...progress, explored: { ...progress.explored, [kanji]: now } };
 }
 
 export const accuracyOf = (s: KanjiStats) => (s.seen ? s.correct / s.seen : 0);
@@ -164,11 +239,14 @@ export function parseProgress(raw: string | null): Progress {
   if (typeof obj.kanji === "object" && obj.kanji !== null) {
     for (const [char, value] of Object.entries(obj.kanji)) {
       const s = value as Record<string, unknown> | null;
-      if (!s || !isCount(s.seen) || !isCount(s.correct) || !isCount(s.streak) || typeof s.lastSeen !== "number") continue;
+      if (!s || !isCount(s.seen) || !isCount(s.correct) || !isCount(s.streak) || typeof s.lastSeen !== "number")
+        continue;
       if (s.correct > s.seen || s.streak > s.correct) continue;
       kanji[char] = { seen: s.seen, correct: s.correct, streak: s.streak, lastSeen: s.lastSeen };
       const srs = parseSrs(s.srs);
       if (srs) kanji[char].srs = srs;
+      const byKind = parseTallies(s.byKind);
+      if (byKind) kanji[char].byKind = byKind;
     }
   }
 
@@ -177,8 +255,40 @@ export function parseProgress(raw: string | null): Progress {
     const s = value as Record<string, unknown> | null;
     if (!s || typeof s.at !== "number" || (s.mode !== "flashcards" && s.mode !== "quiz")) continue;
     if (!isCount(s.total) || !isCount(s.correct) || s.correct > s.total) continue;
-    sessions.push({ at: s.at, mode: s.mode, total: s.total, correct: s.correct });
+    sessions.push({ at: s.at, mode: s.mode, total: s.total, correct: s.correct, ...(isCount(s.ms) && { ms: s.ms }) });
   }
 
-  return { version: PROGRESS_VERSION, kanji, sessions: sessions.slice(-MAX_SESSIONS) };
+  const daily: Record<string, DayActivity> = {};
+  for (const [day, value] of Object.entries(asRecord(obj.daily))) {
+    const d = value as Record<string, unknown> | null;
+    if (!/^\d{4}-\d\d-\d\d$/.test(day) || !d) continue;
+    if (![d.answers, d.correct, d.learned, d.ms].every(isCount) || (d.correct as number) > (d.answers as number))
+      continue;
+    daily[day] = {
+      answers: d.answers as number,
+      correct: d.correct as number,
+      learned: d.learned as number,
+      ms: d.ms as number,
+    };
+  }
+
+  const explored: Record<string, number> = {};
+  for (const [char, at] of Object.entries(asRecord(obj.explored))) {
+    if (typeof at === "number") explored[char] = at;
+  }
+
+  return { version: PROGRESS_VERSION, kanji, sessions: sessions.slice(-MAX_SESSIONS), daily, explored };
+}
+
+const asRecord = (v: unknown): Record<string, unknown> =>
+  typeof v === "object" && v !== null && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+
+function parseTallies(value: unknown): Record<string, Tally> | null {
+  const out: Record<string, Tally> = {};
+  for (const [kind, v] of Object.entries(asRecord(value))) {
+    const t = v as Record<string, unknown> | null;
+    if (t && isCount(t.seen) && isCount(t.correct) && t.correct <= t.seen)
+      out[kind] = { seen: t.seen, correct: t.correct };
+  }
+  return Object.keys(out).length ? out : null;
 }

@@ -106,6 +106,16 @@ export function mergeData(current: UserData, incoming: UserData): UserData {
     .sort((a, b) => a.at - b.at)
     .slice(-200);
 
+  // Two browsers can't both have studied the same day's answers, so keep the larger record of each day.
+  const daily = { ...current.progress.daily };
+  for (const [day, d] of Object.entries(incoming.progress.daily)) {
+    if (!daily[day] || d.answers > daily[day].answers) daily[day] = d;
+  }
+  const explored = { ...current.progress.explored };
+  for (const [char, at] of Object.entries(incoming.progress.explored)) {
+    explored[char] = Math.min(at, explored[char] ?? at);
+  }
+
   const notes = { ...current.notes.kanji };
   for (const [char, n] of Object.entries(incoming.notes.kanji)) {
     if (!notes[char] || n.updatedAt > notes[char].updatedAt) notes[char] = n;
@@ -113,7 +123,7 @@ export function mergeData(current: UserData, incoming: UserData): UserData {
 
   return {
     library: { ...current.library, bookmarks, collections },
-    progress: { ...current.progress, kanji, sessions },
+    progress: { ...current.progress, kanji, sessions, daily, explored },
     notes: { ...current.notes, kanji: notes },
   };
 }
