@@ -1,6 +1,7 @@
 "use client";
 
-import { accuracyOf, dayKey, isMastered, isWeak, recordAnswer } from "@/lib/progress";
+import { useEffect } from "react";
+import { accuracyOf, dayKey, isMastered, isWeak, recordAnswer, recordVisit } from "@/lib/progress";
 import { dueLabel, isDue, type Grade } from "@/lib/srs";
 import { useProgress } from "./useLibrary";
 
@@ -27,6 +28,8 @@ const MARKS: { grade: Grade; label: string }[] = [
 export function KanjiProgress({ character }: { character: string }) {
   const [progress, update] = useProgress();
   const stats = progress.kanji[character];
+  // Counts the page as explored on the dashboard (first visit only).
+  useEffect(() => update((p) => recordVisit(p, character, now())), [character, update]);
   const mark = (grade: Grade) => update((p) => recordAnswer(p, character, grade !== "forgot", now(), grade));
 
   return (

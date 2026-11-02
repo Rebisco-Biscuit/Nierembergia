@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { kanjiHref } from "@/lib/format";
-import { QUESTION_PROMPTS, readingsOf, type Question, type StudyKanji } from "@/lib/study";
+import { QUESTION_PROMPTS, readingsOf, type Question, type QuestionKind, type StudyKanji } from "@/lib/study";
 import { KanjiNoteSnippet } from "../KanjiNoteSnippet";
 import { ReadingList, Romaji } from "../Romaji";
 import { SessionProgress, SessionSummary, type SessionResult } from "./SessionSummary";
@@ -63,7 +63,7 @@ export function Quiz({
   onExit,
 }: {
   questions: Question[];
-  onAnswer?: (kanji: StudyKanji, correct: boolean) => void;
+  onAnswer?: (kanji: StudyKanji, correct: boolean, grade?: undefined, kind?: QuestionKind) => void;
   onFinish?: (results: SessionResult[]) => void;
   onRestart: () => void;
   onRetry: (missed: StudyKanji[]) => void;
@@ -80,7 +80,7 @@ export function Quiz({
     setChosen(i);
     const correct = i === question.answer;
     setResults((r) => [...r, { kanji: question.target, correct }]);
-    onAnswer?.(question.target, correct);
+    onAnswer?.(question.target, correct, undefined, question.kind);
   };
 
   const next = () => {

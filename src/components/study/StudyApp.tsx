@@ -27,7 +27,8 @@ const LENGTHS = [10, 20, Infinity] as const;
 const JLPT_LEVELS: JlptLevel[] = [5, 4, 3, 2, 1];
 
 type Session =
-  { mode: "flashcards"; cards: StudyKanji[]; key: number } | { mode: "quiz"; questions: Question[]; key: number };
+  | { mode: "flashcards"; cards: StudyKanji[]; key: number; startedAt: number }
+  | { mode: "quiz"; questions: Question[]; key: number; startedAt: number };
 
 // Only ever called from event handlers, never during render.
 const freshSeed = () => Math.floor(Math.random() * 2 ** 32);
@@ -102,7 +103,7 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
     const rand = seededRandom(freshSeed());
     const cards = shuffle(deck, rand).slice(0, length);
     if (chosenMode === "flashcards") {
-      setSession({ mode: "flashcards", cards, key: nextSessionKey() });
+      setSession({ mode: "flashcards", cards, key: nextSessionKey(), startedAt: now() });
       setError(null);
       return;
     }
@@ -111,7 +112,7 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
       setError("Couldn't build quiz questions for this deck. Try flashcards, or a bigger deck.");
       return;
     }
-    setSession({ mode: "quiz", questions, key: nextSessionKey() });
+    setSession({ mode: "quiz", questions, key: nextSessionKey(), startedAt: now() });
     setError(null);
   };
 
@@ -121,8 +122,8 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
   if (session) {
     const studyMode = session.mode;
     const common = {
-      onAnswer: (k: StudyKanji, correct: boolean, grade?: Grade) =>
-        updateProgress((p) => recordAnswer(p, k.character, correct, now(), grade)),
+      onAnswer: (k: StudyKanji, correct: boolean, grade?: Grade, kind?: QuestionKind) =>
+        updateProgress((p) => recordAnswer(p, k.character, correct, now(), grade, kind)),
       onFinish: (results: SessionResult[]) =>
         updateProgress((p) =>
           recordSession(p, {
@@ -130,6 +131,7 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
             mode: studyMode,
             total: results.length,
             correct: results.filter((r) => r.correct).length,
+            ms: now() - session.startedAt,
           }),
         ),
       onRestart: () => start(deck(), session.mode),
