@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { KanjiTile } from "@/components/KanjiTile";
 import { MASTERED_STREAK, summarize, type Progress } from "@/lib/progress";
@@ -59,7 +60,10 @@ export function ProgressPanel({
     <section aria-labelledby="progress-heading" className="space-y-6 rounded-2xl border border-border bg-surface p-5">
       <div className="flex items-center justify-between gap-4">
         <h2 id="progress-heading" className="font-medium">
-          Your progress
+          Your progress{" "}
+          <Link href="/progress" className="ml-2 text-sm font-normal text-accent hover:underline">
+            Full dashboard →
+          </Link>
         </h2>
         {confirmReset ? (
           <span className="flex gap-3 text-sm">
