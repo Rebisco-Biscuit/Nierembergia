@@ -103,7 +103,15 @@ Order is provisional; revisit after Day 7.
       They show on the back of flashcards, in quiz explanations, and in each
       compare column; `/library` lists every kanji you've written about.
       Saved in localStorage like the rest of your data.
-- [ ] Progress dashboard and charts
+- [x] **Day 16 — Progress dashboard** (2026-11-02)
+      `/progress`: kanji explored (pages visited), studied, mastered, and due;
+      accuracy, day streak, study time, and sessions. Answers per day over the
+      last week or month (hover or focus a bar for its numbers, or show the
+      table), progress by JLPT level, the most difficult kanji, quiz accuracy
+      by question type, weak readings, and weak components (answers pooled
+      over the kanji sharing them). Progress now also records each day's
+      activity, session time, page visits, and answers by question type;
+      older progress still loads, and backups carry the new data.
 - [ ] Daily targets and filtered study sessions
 - [x] **Day 12 — Export and import** (2026-10-29)
       `/library` downloads bookmarks, collections, study progress, and notes
