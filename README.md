@@ -47,6 +47,8 @@ URL, so they can be shared and bookmarked.
 - `/study`: flashcards and quizzes (meanings, readings, parts, and look-alikes)
   from your bookmarks, a collection, a JLPT
   level, or the kanji you missed last time, plus your study progress.
+- `/progress`: your study dashboard: activity charts, accuracy, JLPT progress,
+  and the kanji, readings, and components you miss most.
 - `/library`: your bookmarks, collections, and notes.
 
 Bookmarks, collections, notes, and study progress are saved in your browser

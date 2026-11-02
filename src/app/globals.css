@@ -19,6 +19,8 @@
   --success-soft: #e8f5ec;
   --danger: #b91c1c;
   --danger-soft: #fbeaea;
+  /* Dashboard: a lighter step of the accent for kanji still being learned. */
+  --chart-learning: #b3a1e0;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -39,6 +41,7 @@
     --success-soft: #16281d;
     --danger: #f87171;
     --danger-soft: #2d1a1a;
+    --chart-learning: #66549a;
   }
 }
 
@@ -55,6 +58,7 @@
   --color-success-soft: var(--success-soft);
   --color-danger: var(--danger);
   --color-danger-soft: var(--danger-soft);
+  --color-chart-learning: var(--chart-learning);
   --font-sans: var(--font-noto-sans-jp), system-ui, sans-serif;
   --font-serif: var(--font-noto-serif-jp), serif;
 }

@@ -24,6 +24,9 @@ export function SiteHeader() {
           <Link href="/study" className="text-muted hover:text-foreground">
             Study
           </Link>
+          <Link href="/progress" className="text-muted hover:text-foreground">
+            Progress
+          </Link>
           <RomajiToggle />
           <Link href="/library" className="flex items-center gap-1.5 text-muted hover:text-foreground">
             <span aria-hidden>★</span> Library

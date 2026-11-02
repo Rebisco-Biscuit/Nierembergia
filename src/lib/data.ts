@@ -18,6 +18,7 @@ import {
 } from "./decomposition";
 import type { ComponentNode } from "./kanjivg";
 import type { Sentence } from "./sentences";
+import type { DashboardKanji } from "./dashboard";
 import { toStudyKanji, type StudyKanji } from "./study";
 import type { Dataset, Kanji, Radical } from "./types";
 import type { VocabWord } from "./vocab";
@@ -208,3 +209,13 @@ export function getStudyKanji(): StudyKanji[] {
     });
   });
 }
+
+/** Every kanji as the progress dashboard needs it. */
+export const getDashboardKanji = (): DashboardKanji[] =>
+  dataset.kanji.map((k) => ({
+    character: k.character,
+    meaning: k.meanings[0] ?? "",
+    jlpt: k.jlpt,
+    readings: [...k.onyomi, ...k.kunyomi].slice(0, 4),
+    parts: (components[k.character]?.children ?? []).flatMap((c) => (c.element ? [c.element] : [])),
+  }));

@@ -6,6 +6,7 @@ import {
   parseProgress,
   recordAnswer,
   recordSession,
+  recordVisit,
   summarize,
   type SessionRecord,
 } from "./progress";
@@ -179,5 +180,52 @@ describe("scheduling", () => {
     expect(parsed.kanji["水"].srs).toEqual({ interval: 3, ease: 2.5, due: 5 });
     expect(parsed.kanji["火"]).toBeDefined();
     expect(parsed.kanji["火"].srs).toBeUndefined();
+  });
+});
+
+describe("daily activity", () => {
+  it("counts answers, correct answers, and newly learned kanji per day", () => {
+    let p = emptyProgress();
+    p = recordAnswer(p, "水", true, at(2, 9));
+    p = recordAnswer(p, "水", false, at(2, 10));
+    p = recordAnswer(p, "火", true, at(3, 9));
+    expect(p.daily["2026-10-02"]).toEqual({ answers: 2, correct: 1, learned: 1, ms: 0 });
+    expect(p.daily["2026-10-03"]).toEqual({ answers: 1, correct: 1, learned: 1, ms: 0 });
+  });
+
+  it("adds session time, capped at an hour", () => {
+    let p = recordSession(emptyProgress(), { ...session(2), ms: 5 * 60_000 });
+    p = recordSession(p, { ...session(2), ms: 5 * 60 * 60_000 });
+    expect(p.daily["2026-10-02"].ms).toBe(65 * 60_000);
+    expect(p.sessions.map((s) => s.ms)).toEqual([5 * 60_000, 60 * 60_000]);
+  });
+
+  it("tallies quiz answers by question kind", () => {
+    let p = recordAnswer(emptyProgress(), "水", true, 1, "good", "reading");
+    p = recordAnswer(p, "水", false, 2, "forgot", "reading");
+    p = recordAnswer(p, "水", true, 3);
+    expect(p.kanji["水"].byKind).toEqual({ reading: { seen: 2, correct: 1 } });
+  });
+});
+
+describe("recordVisit", () => {
+  it("keeps the first visit only", () => {
+    const p = recordVisit(recordVisit(emptyProgress(), "水", 5), "水", 9);
+    expect(p.explored).toEqual({ 水: 5 });
+    expect(recordVisit(p, "水", 10)).toBe(p);
+  });
+});
+
+describe("parseProgress with activity", () => {
+  it("round-trips activity, visits, and tallies, dropping bad entries", () => {
+    let p = recordAnswer(emptyProgress(), "水", true, at(2), "good", "meaning");
+    p = recordVisit(recordSession(p, { ...session(2), ms: 1000 }), "火", 7);
+    expect(parseProgress(JSON.stringify(p))).toEqual(p);
+    const bad = { ...p, daily: { nope: p.daily["2026-10-02"], "2026-10-04": { answers: 1, correct: 5, learned: 0, ms: 0 } }, explored: { 木: "x" } };
+    expect(parseProgress(JSON.stringify(bad))).toMatchObject({ daily: {}, explored: {} });
+  });
+
+  it("reads progress saved before activity was tracked", () => {
+    expect(parseProgress(JSON.stringify({ version: 1, kanji: {}, sessions: [] }))).toEqual(emptyProgress());
   });
 });
