@@ -60,6 +60,11 @@ export default async function ComponentPage({ params }: PageProps<"/component/[c
                 </Link>
               </li>
             )}
+            <li>
+              <Link href={`/study?component=${encodeURIComponent(character)}`} className="text-accent hover:underline">
+                Study these kanji →
+              </Link>
+            </li>
             {soundFamily.length > 0 && (
               <li>
                 <a href="#sound-family" className="hover:text-accent">
