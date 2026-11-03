@@ -17,6 +17,7 @@ import {
 import { componentHref, kanjiHref } from "@/lib/format";
 import { MASTERED_STREAK, summarize } from "@/lib/progress";
 import { ReadingList } from "./Romaji";
+import { TargetsCard } from "./TargetsCard";
 import { useHydrated, useProgress } from "./useLibrary";
 
 // The dashboard renders only after hydration, so the clock is read in the browser.
@@ -59,9 +60,9 @@ const dayLabel = (day: string, style: "short" | "weekday") => {
 };
 
 /** Answers per day as bars; hovering or focusing a bar shows the day's numbers. */
-function ActivityChart({ days, range }: { days: DayPoint[]; range: Range }) {
+function ActivityChart({ days, range, target }: { days: DayPoint[]; range: Range; target: number }) {
   const [active, setActive] = useState<number | null>(null);
-  const max = Math.max(1, ...days.map((d) => d.answers));
+  const max = Math.max(1, target, ...days.map((d) => d.answers));
   const shown = active === null ? null : days[active];
   const labelEvery = range === "week" ? 1 : 5;
 
@@ -72,35 +73,48 @@ function ActivityChart({ days, range }: { days: DayPoint[]; range: Range }) {
           ? `${dayLabel(shown.day, "short")}: ${plural(shown.answers, "answer")}, ${pct(shown.answers ? shown.correct / shown.answers : null)} correct, ${shown.learned} new, ${formatDuration(shown.ms)}`
           : "Answers per day"}
       </p>
-      <div className="relative">
-        {/* Recessive grid: the top line marks the busiest day. */}
-        <div className="absolute inset-x-0 top-0 border-t border-dashed border-border" aria-hidden />
-        <span className="absolute right-0 -top-5 text-xs text-muted tabular-nums" aria-hidden>
-          {max}
-        </span>
-        <ol className="flex h-40 items-end gap-[2px] border-b border-border" aria-label="Answers per day">
-          {days.map((d, i) => (
-            <li
-              key={d.day}
-              className="flex h-full min-w-0 flex-1 items-end"
-              onMouseEnter={() => setActive(i)}
-              onMouseLeave={() => setActive(null)}
+      <div>
+        <div className="relative h-40">
+          {/* Recessive grid: the top line marks the scale's top (busiest day or target). */}
+          <div className="absolute inset-x-0 top-0 border-t border-dashed border-border" aria-hidden />
+          <span className="absolute right-0 -top-5 text-xs text-muted tabular-nums" aria-hidden>
+            {max}
+          </span>
+          {target > 0 && (
+            <div
+              className="pointer-events-none absolute inset-x-0 z-10 border-t-2 border-dashed border-foreground/50"
+              style={{ bottom: `${(target / max) * 100}%` }}
+              aria-hidden
             >
-              <button
-                type="button"
-                className="flex h-full w-full items-end focus-visible:outline-2 focus-visible:outline-accent"
-                onFocus={() => setActive(i)}
-                onBlur={() => setActive(null)}
-                aria-label={`${dayLabel(d.day, "short")}: ${plural(d.answers, "answer")}, ${d.correct} correct`}
+              <span className="absolute -top-5 left-0 rounded bg-surface px-1 text-xs text-muted">
+                Daily target {target}
+              </span>
+            </div>
+          )}
+          <ol className="flex h-full items-end gap-[2px] border-b border-border" aria-label="Answers per day">
+            {days.map((d, i) => (
+              <li
+                key={d.day}
+                className="flex h-full min-w-0 flex-1 items-end"
+                onMouseEnter={() => setActive(i)}
+                onMouseLeave={() => setActive(null)}
               >
-                <span
-                  className={`w-full rounded-t-[4px] ${active === i ? "bg-foreground" : "bg-accent"}`}
-                  style={{ height: d.answers ? `${Math.max(2, (d.answers / max) * 100)}%` : 0 }}
-                />
-              </button>
-            </li>
-          ))}
-        </ol>
+                <button
+                  type="button"
+                  className="flex h-full w-full items-end focus-visible:outline-2 focus-visible:outline-accent"
+                  onFocus={() => setActive(i)}
+                  onBlur={() => setActive(null)}
+                  aria-label={`${dayLabel(d.day, "short")}: ${plural(d.answers, "answer")}, ${d.correct} correct`}
+                >
+                  <span
+                    className={`w-full rounded-t-[4px] ${active === i ? "bg-foreground" : "bg-accent"}`}
+                    style={{ height: d.answers ? `${Math.max(2, (d.answers / max) * 100)}%` : 0 }}
+                  />
+                </button>
+              </li>
+            ))}
+          </ol>
+        </div>
         <ol className="mt-1 flex gap-[2px] text-xs text-muted" aria-hidden>
           {days.map((d, i) => (
             <li key={d.day} className="min-w-0 flex-1 overflow-visible whitespace-nowrap text-center">
@@ -154,12 +168,18 @@ function KanjiLink({ character, meaning, detail }: { character: string; meaning?
 }
 
 export function ProgressDashboard({ kanji }: { kanji: DashboardKanji[] }) {
-  const [progress] = useProgress();
+  const [progress, updateProgress] = useProgress();
   const hydrated = useHydrated();
   const [range, setRange] = useState<Range>("week");
 
   if (!hydrated) {
-    return <div className="mt-8 h-64 animate-pulse rounded-2xl border border-border bg-surface" aria-busy="true" aria-label="Loading" />;
+    return (
+      <div
+        className="mt-8 h-64 animate-pulse rounded-2xl border border-border bg-surface"
+        aria-busy="true"
+        aria-label="Loading"
+      />
+    );
   }
 
   const at = now();
@@ -187,7 +207,12 @@ export function ProgressDashboard({ kanji }: { kanji: DashboardKanji[] }) {
   const byChar = new Map(kanji.map((k) => [k.character, k]));
   const days = activityByDay(progress, RANGES[range].days, at);
   const totals = days.reduce(
-    (t, d) => ({ answers: t.answers + d.answers, correct: t.correct + d.correct, learned: t.learned + d.learned, ms: t.ms + d.ms }),
+    (t, d) => ({
+      answers: t.answers + d.answers,
+      correct: t.correct + d.correct,
+      learned: t.learned + d.learned,
+      ms: t.ms + d.ms,
+    }),
     { answers: 0, correct: 0, learned: 0, ms: 0 },
   );
   const levels = jlptBreakdown(progress, kanji);
@@ -211,6 +236,7 @@ export function ProgressDashboard({ kanji }: { kanji: DashboardKanji[] }) {
 
   return (
     <div className="mt-8 space-y-6">
+      <TargetsCard progress={progress} onChange={(targets) => updateProgress((p) => ({ ...p, targets }))} />
       <dl className="grid grid-cols-2 gap-3 sm:grid-cols-4">
         {stats.map(([label, value, hint]) => (
           <div key={label} className="rounded-xl border border-border bg-surface px-4 py-3">
@@ -251,7 +277,7 @@ export function ProgressDashboard({ kanji }: { kanji: DashboardKanji[] }) {
           {pct(totals.answers ? totals.correct / totals.answers : null)} correct, {totals.learned} new kanji,{" "}
           {formatDuration(totals.ms)}.
         </p>
-        <ActivityChart days={days} range={range} />
+        <ActivityChart days={days} range={range} target={progress.targets.answers} />
       </Section>
 
       <Section title="Progress by JLPT level">
@@ -279,7 +305,10 @@ export function ProgressDashboard({ kanji }: { kanji: DashboardKanji[] }) {
               >
                 {l.mastered > 0 && <span className="bg-accent" style={{ width: `${(l.mastered / l.total) * 100}%` }} />}
                 {l.studied > l.mastered && (
-                  <span className="bg-chart-learning" style={{ width: `${((l.studied - l.mastered) / l.total) * 100}%` }} />
+                  <span
+                    className="bg-chart-learning"
+                    style={{ width: `${((l.studied - l.mastered) / l.total) * 100}%` }}
+                  />
                 )}
               </div>
             </li>
@@ -320,7 +349,10 @@ export function ProgressDashboard({ kanji }: { kanji: DashboardKanji[] }) {
                     </span>
                   </div>
                   <div className="h-2 overflow-hidden rounded-full bg-background" aria-hidden>
-                    <span className="block h-full rounded-full bg-accent" style={{ width: `${(t.correct / t.seen) * 100}%` }} />
+                    <span
+                      className="block h-full rounded-full bg-accent"
+                      style={{ width: `${(t.correct / t.seen) * 100}%` }}
+                    />
                   </div>
                 </li>
               ))}
@@ -330,7 +362,9 @@ export function ProgressDashboard({ kanji }: { kanji: DashboardKanji[] }) {
 
         <Section title="Weak readings">
           {readings.length === 0 ? (
-            <p className="text-sm text-muted">Kanji whose reading questions you miss more often than not show up here.</p>
+            <p className="text-sm text-muted">
+              Kanji whose reading questions you miss more often than not show up here.
+            </p>
           ) : (
             <ul className="divide-y divide-border text-sm">
               {readings.map((r) => (
@@ -372,6 +406,13 @@ export function ProgressDashboard({ kanji }: { kanji: DashboardKanji[] }) {
                   <span className="text-muted tabular-nums">
                     {pct(c.accuracy)} of {c.seen}
                   </span>
+                  <Link
+                    href={`/study?component=${encodeURIComponent(c.component)}`}
+                    className="text-accent hover:underline"
+                    aria-label={`Study kanji containing ${c.component}`}
+                  >
+                    Study
+                  </Link>
                 </li>
               ))}
             </ul>
