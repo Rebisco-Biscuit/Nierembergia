@@ -5,7 +5,11 @@ import { seededRandom, shuffle } from "./random";
 import {
   OPTION_COUNT,
   QUESTION_KINDS,
+  NO_FILTERS,
   deckFromSource,
+  difficultyOf,
+  filterDeck,
+  hasFilters,
   displayReading,
   makeQuestion,
   makeQuiz,
@@ -159,5 +163,47 @@ describe("makeQuiz", () => {
     expect(a.map((q) => [q.kind, q.target.character, q.answer])).toEqual(
       b.map((q) => [q.kind, q.target.character, q.answer]),
     );
+  });
+});
+
+describe("filterDeck", () => {
+  const stats = {
+    水: { seen: 3, correct: 3, streak: 3, lastSeen: 1 },
+    火: { seen: 2, correct: 1, streak: 0, lastSeen: 1 },
+    木: { seen: 1, correct: 1, streak: 1, lastSeen: 1 },
+  };
+  const deck = ["水", "火", "木", "金", "試"].map(get);
+
+  it("keeps everything without filters", () => {
+    expect(filterDeck(deck, NO_FILTERS, stats)).toEqual(deck);
+    expect(hasFilters(NO_FILTERS)).toBe(false);
+  });
+
+  it("filters by JLPT level and difficulty", () => {
+    const chars = (f: Partial<typeof NO_FILTERS>) => filterDeck(deck, { ...NO_FILTERS, ...f }, stats).map((k) => k.character);
+    expect(chars({ jlpt: [4] })).toEqual(["試"]);
+    expect(chars({ difficulty: ["new"] })).toEqual(["金", "試"]);
+    expect(chars({ difficulty: ["weak", "mastered"] })).toEqual(["水", "火"]);
+    expect(chars({ difficulty: ["learning"], jlpt: [5] })).toEqual(["木"]);
+  });
+
+  it("filters by component", () => {
+    const k = (character: string, components: string[]): StudyKanji => ({ ...get(character), components });
+    const parts = [k("語", ["言", "吾", "口", "五"]), k("話", ["言", "舌"]), k("海", ["氵", "毎"])];
+    expect(filterDeck(parts, { ...NO_FILTERS, component: "言" }, {}).map((x) => x.character)).toEqual(["語", "話"]);
+    expect(filterDeck(parts, { ...NO_FILTERS, component: "口" }, {}).map((x) => x.character)).toEqual(["語"]);
+  });
+
+  it("uses every kanji for the all source", () => {
+    expect(deckFromSource({ kind: "all" }, emptyLibrary(), all)).toBe(all);
+  });
+});
+
+describe("difficultyOf", () => {
+  it("classifies kanji by their record", () => {
+    expect(difficultyOf(undefined)).toBe("new");
+    expect(difficultyOf({ seen: 2, correct: 1, streak: 0, lastSeen: 0 })).toBe("weak");
+    expect(difficultyOf({ seen: 2, correct: 2, streak: 2, lastSeen: 0 })).toBe("learning");
+    expect(difficultyOf({ seen: 4, correct: 3, streak: 3, lastSeen: 0 })).toBe("mastered");
   });
 });
