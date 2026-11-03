@@ -45,8 +45,9 @@ URL, so they can be shared and bookmarked.
   it for their sound.
 - `/compare?k=待持特`: kanji side by side, with shared and distinguishing parts.
 - `/study`: flashcards and quizzes (meanings, readings, parts, and look-alikes)
-  from your bookmarks, a collection, a JLPT
-  level, or the kanji you missed last time, plus your study progress.
+  from your bookmarks, a collection, a JLPT level, all kanji, or the kanji you
+  missed last time, filtered by level, difficulty, or component, with daily
+  targets and your study progress.
 - `/progress`: your study dashboard: activity charts, accuracy, JLPT progress,
   and the kanji, readings, and components you miss most.
 - `/library`: your bookmarks, collections, and notes.
