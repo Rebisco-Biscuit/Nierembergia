@@ -57,6 +57,10 @@ describe("dayStreak", () => {
     expect(dayStreak([session(20), session(21)], at(22))).toBe(2);
   });
 
+  it("counts days with answers but no finished session", () => {
+    expect(dayStreak([session(20)], at(22), ["2026-10-21", "2026-10-22"])).toBe(3);
+  });
+
   it("breaks after a missed day", () => {
     expect(dayStreak([session(18), session(19)], at(22))).toBe(0);
     expect(dayStreak([session(18), session(20), session(21), session(22)], at(22))).toBe(3);

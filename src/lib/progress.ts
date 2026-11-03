@@ -172,11 +172,12 @@ export function dayKey(timestamp: number): string {
 }
 
 /**
- * Consecutive days with a finished session, ending today, or yesterday if
- * nothing has been studied yet today (the streak is still alive).
+ * Consecutive days with a finished session or any answers (`activeDays`),
+ * ending today, or yesterday if nothing has been studied yet today (the
+ * streak is still alive).
  */
-export function dayStreak(sessions: SessionRecord[], now: number): number {
-  const days = new Set(sessions.map((s) => dayKey(s.at)));
+export function dayStreak(sessions: SessionRecord[], now: number, activeDays: string[] = []): number {
+  const days = new Set([...sessions.map((s) => dayKey(s.at)), ...activeDays]);
   const cursor = new Date(now);
   if (!days.has(dayKey(cursor.getTime()))) cursor.setDate(cursor.getDate() - 1);
   let streak = 0;
@@ -212,7 +213,11 @@ export function summarize(progress: Progress, now: number): ProgressSummary {
     answers,
     accuracy: answers ? correct / answers : null,
     mastered: entries.filter(([, s]) => isMastered(s)).length,
-    dayStreak: dayStreak(progress.sessions, now),
+    dayStreak: dayStreak(
+      progress.sessions,
+      now,
+      Object.keys(progress.daily).filter((d) => progress.daily[d].answers > 0),
+    ),
     weak: entries
       .filter(([, s]) => isWeak(s))
       .sort(([, a], [, b]) => accuracyOf(a) - accuracyOf(b) || b.lastSeen - a.lastSeen)
