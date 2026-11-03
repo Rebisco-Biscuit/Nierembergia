@@ -40,6 +40,20 @@ export interface SessionRecord {
   ms?: number;
 }
 
+/** Daily study targets; 0 turns a target off. */
+export interface Targets {
+  /** Flashcard or quiz answers per day. */
+  answers: number;
+  /** Kanji answered for the first time per day. */
+  newKanji: number;
+}
+
+export const DEFAULT_TARGETS: Targets = { answers: 20, newKanji: 5 };
+export const MAX_TARGET = 500;
+
+/** A whole number from 0 to MAX_TARGET. */
+export const clampTarget = (n: number) => (Number.isFinite(n) ? Math.min(MAX_TARGET, Math.max(0, Math.round(n))) : 0);
+
 /** One calendar day of studying. */
 export interface DayActivity {
   answers: number;
@@ -59,6 +73,7 @@ export interface Progress {
   daily: Record<string, DayActivity>;
   /** Kanji pages visited, with the first visit's time. */
   explored: Record<string, number>;
+  targets: Targets;
 }
 
 export const emptyProgress = (): Progress => ({
@@ -67,6 +82,7 @@ export const emptyProgress = (): Progress => ({
   sessions: [],
   daily: {},
   explored: {},
+  targets: { ...DEFAULT_TARGETS },
 });
 
 const emptyDay = (): DayActivity => ({ answers: 0, correct: 0, learned: 0, ms: 0 });
@@ -277,7 +293,13 @@ export function parseProgress(raw: string | null): Progress {
     if (typeof at === "number") explored[char] = at;
   }
 
-  return { version: PROGRESS_VERSION, kanji, sessions: sessions.slice(-MAX_SESSIONS), daily, explored };
+  const t = asRecord(obj.targets);
+  const targets: Targets = {
+    answers: typeof t.answers === "number" ? clampTarget(t.answers) : DEFAULT_TARGETS.answers,
+    newKanji: typeof t.newKanji === "number" ? clampTarget(t.newKanji) : DEFAULT_TARGETS.newKanji,
+  };
+
+  return { version: PROGRESS_VERSION, kanji, sessions: sessions.slice(-MAX_SESSIONS), daily, explored, targets };
 }
 
 const asRecord = (v: unknown): Record<string, unknown> =>
