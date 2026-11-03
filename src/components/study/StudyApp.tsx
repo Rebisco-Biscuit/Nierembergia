@@ -1,14 +1,21 @@
 "use client";
 
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import { useState } from "react";
 import { seededRandom, shuffle } from "@/lib/random";
 import {
   COMPONENT_KINDS,
+  DIFFICULTIES,
+  NO_FILTERS,
   QUESTION_KINDS,
   deckFromSource,
+  filterDeck,
+  hasFilters,
   makeQuiz,
+  type DeckFilters,
   type DeckSource,
+  type Difficulty,
   type Question,
   type QuestionKind,
   type StudyKanji,
@@ -16,6 +23,7 @@ import {
 import type { JlptLevel } from "@/lib/types";
 import { emptyProgress, recordAnswer, recordSession, summarize } from "@/lib/progress";
 import type { Grade } from "@/lib/srs";
+import { TargetsCard } from "../TargetsCard";
 import { useHydrated, useLibrary, useProgress } from "../useLibrary";
 import { Flashcards } from "./Flashcards";
 import { ProgressPanel } from "./ProgressPanel";
@@ -43,6 +51,18 @@ const QUESTION_SETS: Record<QuestionSet, { label: string; kinds: QuestionKind[] 
   mixed: { label: "Mixed", kinds: [...QUESTION_KINDS, ...COMPONENT_KINDS] },
 };
 
+const DIFFICULTY_LABELS: Record<Difficulty, string> = {
+  new: "New",
+  learning: "Learning",
+  weak: "Weak",
+  mastered: "Mastered",
+};
+
+const toggle = <T,>(list: T[], item: T) => (list.includes(item) ? list.filter((x) => x !== item) : [...list, item]);
+
+const chip = (on: boolean) =>
+  `cursor-pointer rounded-lg border px-3 py-1.5 text-sm ${on ? "border-accent bg-accent-soft" : "border-border"}`;
+
 const sourceKey = (s: DeckSource) =>
   s.kind === "jlpt" ? `jlpt:${s.level}` : s.kind === "collection" ? `c:${s.id}` : s.kind;
 
@@ -50,7 +70,11 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
   const [library] = useLibrary();
   const [progress, updateProgress] = useProgress();
   const hydrated = useHydrated();
-  const [source, setSource] = useState<DeckSource>({ kind: "jlpt", level: 5 });
+  // `/study?component=氵` (linked from component pages) starts filtered to that component.
+  const urlComponent = useSearchParams().get("component")?.trim() || null;
+  const [componentDraft, setComponentDraft] = useState(urlComponent ?? "");
+  const [source, setSource] = useState<DeckSource>(urlComponent ? { kind: "all" } : { kind: "jlpt", level: 5 });
+  const [filters, setFilters] = useState<Omit<DeckFilters, "component">>(NO_FILTERS);
   const [mode, setMode] = useState<Mode>("flashcards");
   const [length, setLength] = useState<number>(10);
   const [questionSet, setQuestionSet] = useState<QuestionSet>("basic");
@@ -70,6 +94,9 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
   const { weak, due, nextDue } = summarize(progress, now());
   const lists = { weak, due };
   const byChar = new Map(all.map((k) => [k.character, k]));
+  const component = componentDraft.trim();
+  const knownComponent = component !== "" && all.some((k) => k.components?.includes(component));
+  const activeFilters: DeckFilters = { ...filters, component: knownComponent ? component : null };
 
   const sources: { source: DeckSource; label: string; count: number }[] = [
     {
@@ -93,6 +120,7 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
       label: `JLPT N${level}`,
       count: deckFromSource({ kind: "jlpt", level }, library, all).length,
     })),
+    { source: { kind: "all" }, label: "All kanji", count: all.length },
   ];
   // A collection deleted elsewhere falls back to the default deck, N5.
   const find = (s: DeckSource) => sources.find((x) => sourceKey(x.source) === sourceKey(s));
@@ -116,7 +144,8 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
     setError(null);
   };
 
-  const deck = () => deckFromSource(selected.source, library, all, lists);
+  const deck = () => filterDeck(deckFromSource(selected.source, library, all, lists), activeFilters, progress.kanji);
+  const deckSize = deck().length;
   const exit = () => setSession(null);
 
   if (session) {
@@ -154,6 +183,7 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
 
   return (
     <div className="mt-8 space-y-10">
+      <TargetsCard progress={progress} onChange={(targets) => updateProgress((p) => ({ ...p, targets }))} />
       <ProgressPanel
         progress={progress}
         byChar={byChar}
@@ -161,7 +191,7 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
           setSource({ kind: "weak" });
           start(deckFromSource({ kind: "weak" }, library, all, lists));
         }}
-        onReset={() => updateProgress(() => emptyProgress())}
+        onReset={() => updateProgress((p) => ({ ...emptyProgress(), targets: p.targets }))}
         dueCount={due.length}
         nextDue={nextDue}
         onReviewDue={() => {
@@ -218,6 +248,78 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
               to study your own decks.
             </p>
           )}
+        </fieldset>
+
+        <fieldset>
+          <legend className="mb-3 text-sm font-semibold uppercase tracking-wider text-muted">Filter</legend>
+          <div className="flex flex-wrap gap-x-8 gap-y-4">
+            <div>
+              <p className="mb-2 text-xs text-muted">JLPT level</p>
+              <div className="flex flex-wrap gap-2">
+                {JLPT_LEVELS.map((level) => (
+                  <label key={level} className={chip(filters.jlpt.includes(level))}>
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={filters.jlpt.includes(level)}
+                      onChange={() => setFilters({ ...filters, jlpt: toggle(filters.jlpt, level) })}
+                    />
+                    N{level}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="mb-2 text-xs text-muted">Difficulty</p>
+              <div className="flex flex-wrap gap-2">
+                {DIFFICULTIES.map((d) => (
+                  <label key={d} className={chip(filters.difficulty.includes(d))}>
+                    <input
+                      type="checkbox"
+                      className="sr-only"
+                      checked={filters.difficulty.includes(d)}
+                      onChange={() => setFilters({ ...filters, difficulty: toggle(filters.difficulty, d) })}
+                    />
+                    {DIFFICULTY_LABELS[d]}
+                  </label>
+                ))}
+              </div>
+            </div>
+            <label className="flex flex-col gap-2">
+              <span className="text-xs text-muted">Contains component</span>
+              <input
+                lang="ja"
+                value={componentDraft}
+                onChange={(e) => setComponentDraft(e.target.value)}
+                placeholder="e.g. 氵"
+                aria-describedby="component-hint"
+                className="w-28 rounded-lg border border-border bg-background px-3 py-1.5 font-serif text-lg"
+              />
+            </label>
+          </div>
+          <p id="component-hint" className="mt-3 text-sm text-muted" aria-live="polite">
+            {component !== "" && !knownComponent ? (
+              <span className="text-danger">
+                No kanji contain <span lang="ja">{component}</span> as a component.
+              </span>
+            ) : hasFilters(activeFilters) ? (
+              <>
+                {deckSize.toLocaleString("en")} of {selected.count.toLocaleString("en")} kanji in {selected.label} match.{" "}
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilters(NO_FILTERS);
+                    setComponentDraft("");
+                  }}
+                  className="text-accent hover:underline"
+                >
+                  Clear filters
+                </button>
+              </>
+            ) : (
+              "Narrow any deck by level, how well you know each kanji, or a component it contains."
+            )}
+          </p>
         </fieldset>
 
         <div className="flex flex-wrap gap-8">
@@ -293,10 +395,11 @@ export function StudyApp({ all }: { all: StudyKanji[] }) {
 
         <button
           type="submit"
-          disabled={selected.count === 0}
+          disabled={deckSize === 0}
           className="rounded-lg bg-accent px-6 py-3 font-medium text-accent-foreground disabled:opacity-40"
         >
-          Start {mode === "flashcards" ? "flashcards" : "quiz"}: {selected.label} ({Math.min(length, selected.count)})
+          Start {mode === "flashcards" ? "flashcards" : "quiz"}: {selected.label}
+          {hasFilters(activeFilters) && " (filtered)"} ({Math.min(length, deckSize)})
         </button>
       </form>
     </div>

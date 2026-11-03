@@ -112,7 +112,16 @@ Order is provisional; revisit after Day 7.
       over the kanji sharing them). Progress now also records each day's
       activity, session time, page visits, and answers by question type;
       older progress still loads, and backups carry the new data.
-- [ ] Daily targets and filtered study sessions
+- [x] **Day 17 — Daily targets and filtered sessions** (2026-11-03)
+      Targets for answers and new kanji per day (20 and 5 by default; 0
+      turns one off), shown on `/study` and `/progress` with today's
+      progress, "done for today", a streak of days met, and a target line on
+      the activity chart. Targets are saved with progress, so backups carry
+      them, and survive a progress reset. Any deck, plus a new All kanji deck,
+      can be filtered by JLPT level, difficulty (new, learning, weak,
+      mastered), and a component it contains; component pages and weak
+      components on the dashboard link to `/study?component=…`. The day
+      streak now counts any day with answers.
 - [x] **Day 12 — Export and import** (2026-10-29)
       `/library` downloads bookmarks, collections, study progress, and notes
       as one dated JSON file, and restores from one: a preview shows what the

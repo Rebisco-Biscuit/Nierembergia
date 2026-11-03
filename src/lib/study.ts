@@ -1,5 +1,6 @@
 import { makeComponentQuestion } from "./component-quiz";
 import type { Library } from "./library";
+import { isMastered, isWeak, type KanjiStats } from "./progress";
 import { shuffle } from "./random";
 import type { JlptLevel, Kanji } from "./types";
 
@@ -30,6 +31,8 @@ export const toStudyKanji = (k: Kanji, extras?: StudyExtras): StudyKanji => ({
 });
 
 export type DeckSource =
+  /** Every kanji, usually narrowed with filters. */
+  | { kind: "all" }
   | { kind: "bookmarks" }
   | { kind: "collection"; id: string }
   | { kind: "jlpt"; level: JlptLevel }
@@ -51,6 +54,7 @@ export function deckFromSource(
   all: StudyKanji[],
   lists: ProgressLists = {},
 ): StudyKanji[] {
+  if (source.kind === "all") return all;
   if (source.kind === "jlpt") return all.filter((k) => k.jlpt === source.level);
   const byChar = new Map(all.map((k) => [k.character, k]));
   const chars =
@@ -60,6 +64,39 @@ export function deckFromSource(
         ? (lists[source.kind] ?? [])
         : (library.collections.find((c) => c.id === source.id)?.kanji ?? []);
   return chars.flatMap((c) => byChar.get(c) ?? []);
+}
+
+/** Where a kanji stands in your studies. */
+export type Difficulty = "new" | "learning" | "weak" | "mastered";
+export const DIFFICULTIES: Difficulty[] = ["new", "learning", "weak", "mastered"];
+
+/** New: never answered. Weak: missed last time. Mastered: right several times in a row. */
+export function difficultyOf(stats: KanjiStats | undefined): Difficulty {
+  if (!stats || stats.seen === 0) return "new";
+  if (isWeak(stats)) return "weak";
+  return isMastered(stats) ? "mastered" : "learning";
+}
+
+/** Narrows a deck; an empty list or null means "any". */
+export interface DeckFilters {
+  jlpt: JlptLevel[];
+  /** Only kanji containing this component, at any depth. */
+  component: string | null;
+  difficulty: Difficulty[];
+}
+
+export const NO_FILTERS: DeckFilters = { jlpt: [], component: null, difficulty: [] };
+
+export const hasFilters = (f: DeckFilters) => f.jlpt.length > 0 || f.component !== null || f.difficulty.length > 0;
+
+export function filterDeck(deck: StudyKanji[], filters: DeckFilters, stats: Record<string, KanjiStats>): StudyKanji[] {
+  const { jlpt, component, difficulty } = filters;
+  return deck.filter(
+    (k) =>
+      (jlpt.length === 0 || (k.jlpt !== null && jlpt.includes(k.jlpt))) &&
+      (component === null || (k.components ?? []).includes(component)) &&
+      (difficulty.length === 0 || difficulty.includes(difficultyOf(stats[k.character]))),
+  );
 }
 
 /**

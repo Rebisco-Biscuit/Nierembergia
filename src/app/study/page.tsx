@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { StudyApp } from "@/components/study/StudyApp";
 import { getStudyKanji } from "@/lib/data";
 
@@ -14,7 +15,12 @@ export default function StudyPage() {
       <p className="mt-1 text-sm text-muted">
         Flashcards and quizzes from your bookmarks, collections, or a JLPT level.
       </p>
-      <StudyApp all={getStudyKanji()} />
+      {/* StudyApp reads the URL (?component=), so it renders in the browser. */}
+      <Suspense
+        fallback={<div className="mt-8 h-64 animate-pulse rounded-2xl border border-border bg-surface" aria-hidden />}
+      >
+        <StudyApp all={getStudyKanji()} />
+      </Suspense>
     </main>
   );
 }
