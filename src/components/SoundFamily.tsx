@@ -4,7 +4,7 @@ import type { SoundFamilyMember } from "@/lib/data";
 import { kanjiHref } from "@/lib/format";
 import { SOUND_MATCH_LABELS, type SoundMatch } from "@/lib/phonetic";
 import type { Kanji } from "@/lib/types";
-import { ReadingList } from "./Romaji";
+import { ReadingList, Romaji } from "./Romaji";
 
 const GROUPS: { match: SoundMatch | null; label: string }[] = [
   { match: "same", label: SOUND_MATCH_LABELS.same },
@@ -34,6 +34,7 @@ function MemberTile({ member }: { member: SoundFamilyMember }) {
         <span lang="ja" className="w-full truncate text-center text-xs">
           {reading ?? "—"}
         </span>
+        {reading && <Romaji reading={reading} className="w-full truncate text-center text-xs" />}
         {inferred && <span className="sr-only">(sound role inferred)</span>}
       </Link>
     </li>

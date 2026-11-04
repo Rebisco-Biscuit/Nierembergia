@@ -14,9 +14,9 @@ import {
   type DashboardKanji,
   type DayPoint,
 } from "@/lib/dashboard";
-import { componentHref, kanjiHref } from "@/lib/format";
+import { componentHref, displayReading, kanjiHref } from "@/lib/format";
 import { MASTERED_STREAK, summarize } from "@/lib/progress";
-import { ReadingList } from "./Romaji";
+import { ReadingList, Romaji } from "./Romaji";
 import { TargetsCard } from "./TargetsCard";
 import { useHydrated, useProgress } from "./useLibrary";
 
@@ -152,7 +152,17 @@ function ActivityChart({ days, range, target }: { days: DayPoint[]; range: Range
   );
 }
 
-function KanjiLink({ character, meaning, detail }: { character: string; meaning?: string; detail: string }) {
+function KanjiLink({
+  character,
+  meaning,
+  reading,
+  detail,
+}: {
+  character: string;
+  meaning?: string;
+  reading?: string;
+  detail: string;
+}) {
   return (
     <Link
       href={kanjiHref(character)}
@@ -162,6 +172,14 @@ function KanjiLink({ character, meaning, detail }: { character: string; meaning?
       <span lang="ja" className="font-serif text-3xl leading-none">
         {character}
       </span>
+      {reading && (
+        <span className="flex w-full flex-col text-center text-xs leading-tight">
+          <span lang="ja" className="truncate">
+            {displayReading(reading)}
+          </span>
+          <Romaji reading={displayReading(reading)} className="truncate" />
+        </span>
+      )}
       <span className="w-full truncate text-center text-xs text-muted">{detail}</span>
     </Link>
   );
@@ -327,6 +345,7 @@ export function ProgressDashboard({ kanji }: { kanji: DashboardKanji[] }) {
                   <KanjiLink
                     character={h.character}
                     meaning={byChar.get(h.character)?.meaning}
+                    reading={byChar.get(h.character)?.readings[0]}
                     detail={`${pct(h.accuracy)} of ${h.seen}`}
                   />
                 </li>
