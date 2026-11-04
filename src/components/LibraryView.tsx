@@ -17,9 +17,14 @@ import { BackupPanel } from "./BackupPanel";
 import { KanjiTile } from "./KanjiTile";
 import { newCollectionId, useHydrated, useLibrary, useNotes } from "./useLibrary";
 
-type Meanings = Record<string, string>;
+type Previews = Record<string, { meaning: string; reading: string | null }>;
 
-export function LibraryView({ meanings }: { meanings: Meanings }) {
+function PreviewTile({ character, previews }: { character: string; previews: Previews }) {
+  const { meaning, reading } = previews[character];
+  return <KanjiTile kanji={{ character, meanings: meaning ? [meaning] : [] }} reading={reading} />;
+}
+
+export function LibraryView({ previews }: { previews: Previews }) {
   const [library, update] = useLibrary();
   const hydrated = useHydrated();
 
@@ -49,7 +54,7 @@ export function LibraryView({ meanings }: { meanings: Meanings }) {
         ) : (
           <KanjiList
             kanji={library.bookmarks}
-            meanings={meanings}
+            previews={previews}
             removeLabel="Remove bookmark"
             onRemove={(k) => update((lib) => toggleBookmark(lib, k))}
           />
@@ -69,23 +74,23 @@ export function LibraryView({ meanings }: { meanings: Meanings }) {
           <ul className="mt-6 space-y-6">
             {library.collections.map((c) => (
               <li key={c.id}>
-                <CollectionCard collection={c} meanings={meanings} />
+                <CollectionCard collection={c} previews={previews} />
               </li>
             ))}
           </ul>
         )}
       </section>
 
-      <NotesSection meanings={meanings} />
+      <NotesSection previews={previews} />
 
       <BackupPanel />
     </div>
   );
 }
 
-function NotesSection({ meanings }: { meanings: Meanings }) {
+function NotesSection({ previews }: { previews: Previews }) {
   const [notes] = useNotes();
-  const noted = notedKanji(notes).filter((k) => k in meanings);
+  const noted = notedKanji(notes).filter((k) => k in previews);
 
   return (
     <section aria-labelledby="notes-heading">
@@ -100,7 +105,7 @@ function NotesSection({ meanings }: { meanings: Meanings }) {
             const { mnemonic, note } = notes.kanji[k];
             return (
               <li key={k} className="flex items-start gap-4 px-4 py-3">
-                <KanjiTile kanji={{ character: k, meanings: meanings[k] ? [meanings[k]] : [] }} />
+                <PreviewTile character={k} previews={previews} />
                 <div className="min-w-0 flex-1 space-y-1 text-sm">
                   {mnemonic.trim() && (
                     <p className="line-clamp-2">
@@ -124,7 +129,7 @@ function NotesSection({ meanings }: { meanings: Meanings }) {
   );
 }
 
-function CollectionCard({ collection, meanings }: { collection: Collection; meanings: Meanings }) {
+function CollectionCard({ collection, previews }: { collection: Collection; previews: Previews }) {
   const [, update] = useLibrary();
   const [editing, setEditing] = useState(false);
   const [confirmDelete, setConfirmDelete] = useState(false);
@@ -196,7 +201,7 @@ function CollectionCard({ collection, meanings }: { collection: Collection; mean
       ) : (
         <KanjiList
           kanji={collection.kanji}
-          meanings={meanings}
+          previews={previews}
           removeLabel={`Remove from ${collection.name}`}
           onRemove={(k) => update((lib) => removeFromCollection(lib, collection.id, k))}
         />
@@ -207,22 +212,22 @@ function CollectionCard({ collection, meanings }: { collection: Collection; mean
 
 function KanjiList({
   kanji,
-  meanings,
+  previews,
   removeLabel,
   onRemove,
 }: {
   kanji: string[];
-  meanings: Meanings;
+  previews: Previews;
   removeLabel: string;
   onRemove: (kanji: string) => void;
 }) {
   // Saved characters that are no longer in the dataset are skipped, not shown broken.
-  const known = kanji.filter((k) => k in meanings);
+  const known = kanji.filter((k) => k in previews);
   return (
     <ul className="flex flex-wrap gap-2">
       {known.map((k) => (
         <li key={k} className="relative">
-          <KanjiTile kanji={{ character: k, meanings: meanings[k] ? [meanings[k]] : [] }} />
+          <PreviewTile character={k} previews={previews} />
           <button
             type="button"
             onClick={() => onRemove(k)}

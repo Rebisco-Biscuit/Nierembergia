@@ -6,6 +6,7 @@ import vocabJson from "@/data/vocab.json";
 import componentsJson from "@/data/components.json";
 import sentencesJson from "@/data/sentences.json";
 import { buildCatalog, buildComponentUses, type ComponentUseItem } from "./component-explorer";
+import { previewReading } from "./format";
 import { similarKanji } from "./similarity";
 import { buildComponentIndex, componentsOf, relatedByComponent } from "./component-index";
 import {
@@ -106,6 +107,7 @@ export function getComponentDetail(character: string): ComponentDetail | null {
       return {
         character: k.character,
         meaning: k.meanings[0] ?? "",
+        reading: previewReading(k),
         jlpt: k.jlpt,
         strokes: k.strokes,
         frequency: k.frequency,

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { componentHref, decodeParam, gradeLabel, kanjiHref, parseKunReading } from "./format";
+import { componentHref, decodeParam, gradeLabel, kanjiHref, parseKunReading, previewReading } from "./format";
 
 describe("parseKunReading", () => {
   it("splits okurigana", () => {
@@ -44,5 +44,18 @@ describe("kanji URLs", () => {
   it("accepts already-decoded or malformed params", () => {
     expect(decodeParam("水")).toBe("水");
     expect(decodeParam("%E6%B0")).toBe("%E6%B0");
+  });
+});
+
+describe("previewReading", () => {
+  it("prefers the first on'yomi, else the first kun'yomi, without okurigana marks", () => {
+    expect(previewReading({ onyomi: ["スイ"], kunyomi: ["みず"] })).toBe("スイ");
+    expect(previewReading({ onyomi: [], kunyomi: ["た.べる"] })).toBe("たべる");
+    expect(previewReading({ kunyomi: ["-び"] })).toBe("び");
+  });
+
+  it("is null when there's nothing to show", () => {
+    expect(previewReading({ onyomi: [], kunyomi: [] })).toBeNull();
+    expect(previewReading({})).toBeNull();
   });
 });
