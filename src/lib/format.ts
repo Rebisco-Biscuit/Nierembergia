@@ -44,3 +44,12 @@ export function decodeParam(param: string): string {
     return param;
   }
 }
+
+/** A reading as learners write it: "た.べる" → "たべる", "-び" → "び". */
+export const displayReading = (r: string) => r.replace(/[.-]/g, "");
+
+/** The reading to show on a small kanji tile: its first on'yomi, else its first kun'yomi. */
+export function previewReading(k: { onyomi?: string[]; kunyomi?: string[] }): string | null {
+  const reading = k.onyomi?.[0] ?? k.kunyomi?.[0];
+  return reading ? displayReading(reading) : null;
+}

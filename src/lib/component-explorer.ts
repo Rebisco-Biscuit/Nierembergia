@@ -117,6 +117,8 @@ export function tally<T>(values: T[]): { value: T; count: number }[] {
 export interface ComponentUseItem {
   character: string;
   meaning: string;
+  /** Its main reading, for the tile. */
+  reading: string | null;
   jlpt: Kanji["jlpt"];
   strokes: number;
   frequency: number | null;

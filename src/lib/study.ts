@@ -1,4 +1,5 @@
 import { makeComponentQuestion } from "./component-quiz";
+import { displayReading } from "./format";
 import type { Library } from "./library";
 import { isMastered, isWeak, type KanjiStats } from "./progress";
 import { shuffle } from "./random";
@@ -131,8 +132,7 @@ export interface Question {
   component?: string;
 }
 
-/** A reading as learners write it: "た.べる" → "たべる", "-び" → "び". */
-export const displayReading = (r: string) => r.replace(/[.-]/g, "");
+export { displayReading };
 
 /** Distinct readings as learners write them (な.す and なす are the same word). */
 export const readingsOf = (k: StudyKanji) => [...new Set([...k.onyomi, ...k.kunyomi].map(displayReading))];

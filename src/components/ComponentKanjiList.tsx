@@ -171,7 +171,7 @@ export function ComponentKanjiList({ character, uses }: { character: string; use
         <ul className="flex flex-wrap gap-2">
           {shown.map((u) => (
             <li key={u.character}>
-              <KanjiTile kanji={{ character: u.character, meanings: u.meaning ? [u.meaning] : [] }} />
+              <KanjiTile kanji={{ character: u.character, meanings: u.meaning ? [u.meaning] : [] }} reading={u.reading} />
             </li>
           ))}
         </ul>

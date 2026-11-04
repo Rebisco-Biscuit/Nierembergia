@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { LibraryView } from "@/components/LibraryView";
 import { dataset } from "@/lib/data";
+import { previewReading } from "@/lib/format";
 
 export const metadata: Metadata = {
   title: "Your library — Nierembergia",
@@ -9,8 +10,10 @@ export const metadata: Metadata = {
 
 export default function LibraryPage() {
   // The library lives in the browser, so the client needs each kanji's
-  // meaning to show the saved characters.
-  const meanings = Object.fromEntries(dataset.kanji.map((k) => [k.character, k.meanings[0] ?? ""]));
+  // meaning and reading to show the saved characters.
+  const previews = Object.fromEntries(
+    dataset.kanji.map((k) => [k.character, { meaning: k.meanings[0] ?? "", reading: previewReading(k) }]),
+  );
 
   return (
     <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:py-12">
@@ -18,7 +21,7 @@ export default function LibraryPage() {
       <p className="mt-1 text-sm text-muted">
         Bookmarks, collections, and notes are saved in this browser only.
       </p>
-      <LibraryView meanings={meanings} />
+      <LibraryView previews={previews} />
     </main>
   );
 }

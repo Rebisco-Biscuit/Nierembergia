@@ -31,16 +31,16 @@ export function KanjiCard({ kanji }: { kanji: Kanji }) {
           {onyomi.length > 0 && (
             <div className="flex gap-2">
               <dt className="sr-only">On&apos;yomi</dt>
-              <dd className="min-w-0 truncate">
-                <ReadingList readings={onyomi.slice(0, 3)} />
+              <dd className="min-w-0">
+                <ReadingList readings={onyomi.slice(0, 3)} romajiClassName="" />
               </dd>
             </div>
           )}
           {kunyomi.length > 0 && (
             <div className="flex gap-2">
               <dt className="sr-only">Kun&apos;yomi</dt>
-              <dd className="min-w-0 truncate">
-                <ReadingList readings={kunyomi.slice(0, 3)} />
+              <dd className="min-w-0">
+                <ReadingList readings={kunyomi.slice(0, 3)} romajiClassName="" />
               </dd>
             </div>
           )}
