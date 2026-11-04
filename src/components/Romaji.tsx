@@ -20,17 +20,19 @@ export function ReadingList({
   readings,
   display = (r) => r,
   separator = "、",
+  romajiClassName = "text-[0.85em]",
 }: {
   readings: string[];
   display?: (reading: string) => string;
   separator?: string;
+  romajiClassName?: string;
 }) {
   return (
     <>
       {readings.map((r, i) => (
-        <span key={r}>
-          {i > 0 && separator}
-          <span lang="ja">{display(r)}</span> <Romaji reading={r} className="text-[0.85em]" />
+        <span key={r} className="inline-block whitespace-nowrap">
+          <span lang="ja">{display(r)}</span> <Romaji reading={r} className={romajiClassName} />
+          {i < readings.length - 1 && separator}
         </span>
       ))}
     </>
